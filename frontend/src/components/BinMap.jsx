@@ -1,7 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, CircleMarker, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Layers } from 'lucide-react';
 import L from 'leaflet';
 
 // Fix Leaflet default icon issue in bundlers
@@ -38,44 +37,9 @@ function MapController() {
 function BinMap({ bins, routes }) {
   // Center on Ahmedabad (AMC Municipal Region)
   const center = [23.0225, 72.5714];
-  const [mapStyle, setMapStyle] = useState('osm'); // 'osm' or 'carto'
-
-  const tileProviders = {
-    osm: {
-      url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-      maxZoom: 19,
-    },
-    carto: {
-      url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-      subdomains: 'abcd',
-      maxZoom: 20,
-    }
-  };
-
-  const activeProvider = tileProviders[mapStyle];
 
   return (
     <div className="map-container-wrapper">
-      {/* Map Tile Style Toggle */}
-      <div className="map-layer-selector">
-        <button 
-          className={`layer-toggle-btn ${mapStyle === 'osm' ? 'active' : ''}`}
-          onClick={() => setMapStyle('osm')}
-          title="OpenStreetMap Standard"
-        >
-          OSM Clean
-        </button>
-        <button 
-          className={`layer-toggle-btn ${mapStyle === 'carto' ? 'active' : ''}`}
-          onClick={() => setMapStyle('carto')}
-          title="Carto Positron Light"
-        >
-          Carto Light
-        </button>
-      </div>
-
       <MapContainer
         center={center}
         zoom={12}
@@ -84,11 +48,8 @@ function BinMap({ bins, routes }) {
       >
         <MapController />
         <TileLayer
-          key={mapStyle}
-          url={activeProvider.url}
-          attribution={activeProvider.attribution}
-          subdomains={activeProvider.subdomains || 'abc'}
-          maxZoom={activeProvider.maxZoom || 19}
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
         {/* Bin markers */}
