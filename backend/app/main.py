@@ -26,6 +26,7 @@ from app.api.priorities import router as priorities_router
 from app.api.routes import router as routes_router
 from app.api.alerts import router as alerts_router
 from app.api.analytics import router as analytics_router
+from app.api.simulation import router as simulation_router, set_broadcast_callback
 
 
 # ── WebSocket connection manager ─────────────────────────────────────────────
@@ -79,6 +80,9 @@ async def lifespan(app: FastAPI):
     finally:
         db.close()
 
+    # Configure simulation broadcast
+    set_broadcast_callback(broadcast_bin_update)
+
     # Start background broadcast task
     broadcast_task = asyncio.create_task(_broadcast_updates())
 
@@ -87,32 +91,37 @@ async def lifespan(app: FastAPI):
     broadcast_task.cancel()
 
 
+async def broadcast_bin_update():
+    """Broadcasts bin status updates to connected WebSocket clients."""
+    if manager.active_connections:
+        db = SessionLocal()
+        try:
+            bins = db.query(Bin).all()
+            data = {
+                "type": "bin_update",
+                "bins": [
+                    {
+                        "id": b.id,
+                        "name": b.name,
+                        "lat": b.lat,
+                        "lng": b.lng,
+                        "current_fill_percent": b.current_fill_percent,
+                        "waste_type": b.waste_type.value if hasattr(b.waste_type, 'value') else b.waste_type,
+                        "zone": b.zone,
+                    }
+                    for b in bins
+                ],
+            }
+            await manager.broadcast(data)
+        finally:
+            db.close()
+
+
 async def _broadcast_updates():
     """Periodically broadcast bin status updates to connected WebSocket clients."""
     while True:
-        await asyncio.sleep(10)  # Every 10 seconds
-        if manager.active_connections:
-            db = SessionLocal()
-            try:
-                bins = db.query(Bin).all()
-                data = {
-                    "type": "bin_update",
-                    "bins": [
-                        {
-                            "id": b.id,
-                            "name": b.name,
-                            "lat": b.lat,
-                            "lng": b.lng,
-                            "current_fill_percent": b.current_fill_percent,
-                            "waste_type": b.waste_type.value if hasattr(b.waste_type, 'value') else b.waste_type,
-                            "zone": b.zone,
-                        }
-                        for b in bins
-                    ],
-                }
-                await manager.broadcast(data)
-            finally:
-                db.close()
+        await asyncio.sleep(8)  # Every 8 seconds
+        await broadcast_bin_update()
 
 
 # ── App ──────────────────────────────────────────────────────────────────────
@@ -140,6 +149,7 @@ app.include_router(priorities_router)
 app.include_router(routes_router)
 app.include_router(alerts_router)
 app.include_router(analytics_router)
+app.include_router(simulation_router)
 
 
 @app.get("/")

@@ -133,19 +133,25 @@ def generate_fill_readings(db: Session, bins: list[Bin], days: int = 60):
 
 
 def generate_vehicles(db: Session) -> list[Vehicle]:
-    """Create 3 AMC collection vehicles with depots near Ahmedabad hubs."""
+    """Create 4 AMC collection vehicles with depots covering 4 Ahmedabad zones."""
     vehicles = []
     depot_positions = [
-        (CENTER_LAT + 0.012, CENTER_LNG - 0.015),  # West Depot (Ashram Road)
-        (CENTER_LAT - 0.020, CENTER_LNG + 0.025),  # South Depot (Kankaria/Danilimda)
-        (CENTER_LAT + 0.025, CENTER_LNG - 0.035),  # North-West Depot (Bodakdev)
+        (CENTER_LAT + 0.012, CENTER_LNG - 0.015),  # West Depot (Ashram Road / Navrangpura)
+        (CENTER_LAT - 0.020, CENTER_LNG + 0.025),  # South Depot (Kankaria / Danilimda)
+        (CENTER_LAT + 0.025, CENTER_LNG - 0.035),  # North-West Depot (Bodakdev / SG Highway)
+        (CENTER_LAT - 0.010, CENTER_LNG + 0.035),  # East Depot (Maninagar / Nikol)
     ]
-    names = ["AMC Swachhata Vahini 01", "AMC Swachhata Vahini 02", "AMC Swachhata Vahini 03"]
+    names = [
+        "AMC Swachhata Vahini 01",
+        "AMC Swachhata Vahini 02",
+        "AMC Swachhata Vahini 03",
+        "AMC Swachhata Vahini 04",
+    ]
 
     for i, (dlat, dlng) in enumerate(depot_positions):
         vehicle = Vehicle(
             name=names[i],
-            capacity_liters=random.choice([1200, 1500, 1800]),
+            capacity_liters=10000.0,
             depot_lat=round(dlat, 6),
             depot_lng=round(dlng, 6),
             current_lat=round(dlat, 6),
