@@ -173,17 +173,18 @@ function HeatmapLayer({ heatmapData, hoursAhead = 0 }) {
 
 
 function TruckMarker({ truck }) {
+  const label = truck.plateNumber || truck.vehicleName.split(' ').pop();
   const icon = useMemo(() => L.divIcon({
     className: 'truck-marker-icon',
     html: `<div class="truck-marker-inner">
       <div class="truck-pulse-ring" style="background: ${truck.color}40; border: 2px solid ${truck.color}"></div>
       <div class="truck-emoji">🚛</div>
-      <div class="truck-label-tag" style="background: ${truck.color}">${truck.vehicleName.split(' ').pop()}</div>
+      <div class="truck-label-tag" style="background: ${truck.color}">${label}</div>
     </div>`,
-    iconSize: [56, 68],
-    iconAnchor: [28, 34],
-    popupAnchor: [0, -38],
-  }), [truck.color, truck.vehicleName]);
+    iconSize: [64, 72],
+    iconAnchor: [32, 36],
+    popupAnchor: [0, -40],
+  }), [truck.color, label]);
 
   if (!truck.position || truck.done) return null;
 
@@ -197,29 +198,54 @@ function TruckMarker({ truck }) {
     >
       <Popup className="modern-map-popup" autoClose={false} closeOnClick={false}>
         <div className="popup-card truck-collection-popup">
-          <div className="popup-header">
-            <span className="popup-zone-badge truck-badge" style={{ background: truck.color }}>🚛 {truck.vehicleName}</span>
+          <div className="popup-header" style={{ justifyContent: 'space-between' }}>
+            <span className="popup-zone-badge truck-badge" style={{ background: truck.color }}>
+              🚛 {truck.vehicleName}
+            </span>
+            {truck.plateNumber && (
+              <span className="popup-plate-tag" style={{ border: `1px solid ${truck.color}` }}>
+                {truck.plateNumber}
+              </span>
+            )}
           </div>
+
+          {truck.model && (
+            <div className="popup-truck-model-text" style={{ fontSize: '0.74rem', color: '#64748b', fontWeight: 600 }}>
+              {truck.model}
+            </div>
+          )}
+
+          {truck.driver && (
+            <div className="popup-driver-strip" style={{ background: '#f8fafc', padding: '5px 8px', borderRadius: '4px', border: '1px solid #e2e8f0', margin: '4px 0', fontSize: '0.74rem' }}>
+              <div><strong>Driver:</strong> {truck.driver.name} ({truck.driver.empId})</div>
+              <div style={{ color: '#64748b', fontSize: '0.7rem' }}>📞 {truck.driver.phone} · {truck.driver.rating}</div>
+            </div>
+          )}
+
           {currentStop && (
             <>
-              <div className="popup-title">{currentStop.bin_name}</div>
+              <div className="popup-title" style={{ fontSize: '0.88rem', marginTop: '2px' }}>
+                📍 Servicing: {currentStop.bin_name}
+              </div>
               <div className="popup-stat-row">
-                <span className="popup-fill-label">Waste This Stop:</span>
-                <span className="popup-fill-val" style={{ color: '#10b981' }}>
-                  {Math.round(currentStop.fill_percent * 2.4)}L
+                <span className="popup-fill-label">Bin Fill Level:</span>
+                <span className="popup-fill-val" style={{ color: '#10b981', fontSize: '0.9rem' }}>
+                  {Math.round(currentStop.fill_percent)}% ({Math.round(currentStop.fill_percent * 2.4)}L)
                 </span>
               </div>
             </>
           )}
+
           <div className="popup-stat-row">
-            <span className="popup-fill-label">Total Collected:</span>
-            <span className="popup-fill-val" style={{ color: truck.color }}>
-              {truck.wasteCollected}L
+            <span className="popup-fill-label">Total Loaded:</span>
+            <span className="popup-fill-val" style={{ color: truck.color, fontSize: '0.9rem' }}>
+              {truck.wasteCollected}L / {truck.capacityLiters || 5000}L
             </span>
           </div>
+
           <div className="popup-stat-row">
-            <span className="popup-fill-label">Progress:</span>
-            <span className="popup-fill-val" style={{ color: '#2563eb' }}>
+            <span className="popup-fill-label">Stops Completed:</span>
+            <span className="popup-fill-val" style={{ color: '#2563eb', fontSize: '0.85rem' }}>
               {truck.stopsCompleted.length}/{truck.totalStops} stops
             </span>
           </div>
@@ -266,9 +292,8 @@ function BinMap({ bins, routes, truckStates = [], collectionActive, totalWasteCo
           <HeatmapLayer heatmapData={heatmapData} hoursAhead={heatmapHoursAhead} />
         )}
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-          subdomains="abcd"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           maxZoom={19}
         />
 

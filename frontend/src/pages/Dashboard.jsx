@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Trash2, 
   AlertTriangle, 
@@ -16,19 +17,25 @@ import {
   Zap,
   Flame,
   CheckCircle2,
-  Package
+  Package,
+  ExternalLink,
+  ChevronRight,
+  Phone,
+  User,
+  Navigation,
+  Fuel
 } from 'lucide-react';
 import api from '../api';
 import BinMap from '../components/BinMap';
-import RoutePanel from '../components/RoutePanel';
-import AlertsPanel from '../components/AlertsPanel';
 import StatsCharts from '../components/StatsCharts';
 import HeatmapSlider from '../components/HeatmapSlider';
 import { aStarOptimizeStops } from '../utils/astar';
+import { AMC_FLEET, getFleetVehicleMeta } from '../data/fleetData';
 
 const TRUCK_COLORS = ['#2563eb', '#8b5cf6', '#f59e0b', '#06b6d4'];
 
 function Dashboard() {
+  const navigate = useNavigate();
   const [bins, setBins] = useState([]);
   const [routes, setRoutes] = useState([]);
   const [alerts, setAlerts] = useState([]);
@@ -68,12 +75,46 @@ function Dashboard() {
     // During active collection, skip full bin reload to preserve real-time emptied visual states
     if (collectionActiveRef.current) return;
     try {
-      const [binsRes, alertsRes] = await Promise.all([
+      const [binsRes, alertsRes, routesRes] = await Promise.all([
         api.get('/bins'),
         api.get('/alerts'),
+        api.get('/routes/today?fill_threshold=50.0').catch(() => ({ data: { routes: [] } }))
       ]);
-      setBins(binsRes.data);
-      setAlerts(alertsRes.data);
+      setBins(binsRes.data || []);
+      setAlerts(alertsRes.data || []);
+      const fetchedRoutes = routesRes.data?.routes || [];
+      setRoutes(fetchedRoutes);
+
+      setTruckStates(prev => {
+        return AMC_FLEET.map((fleetMeta, idx) => {
+          const matchingRoute = fetchedRoutes[idx] || null;
+          const stops = matchingRoute ? matchingRoute.stops : [];
+          const existing = prev[idx] || {};
+
+          return {
+            routeIdx: idx,
+            vehicleName: fleetMeta.vehicleName,
+            plateNumber: fleetMeta.plateNumber,
+            model: fleetMeta.model,
+            capacityLiters: fleetMeta.capacityLiters,
+            fuelType: fleetMeta.fuelType,
+            driver: fleetMeta.driver,
+            zone: fleetMeta.zone,
+            color: fleetMeta.color,
+            position: existing.position || (matchingRoute?.depot ? { lat: matchingRoute.depot.lat, lng: matchingRoute.depot.lng } : { lat: fleetMeta.depotCoords[0], lng: fleetMeta.depotCoords[1] }),
+            currentStopIdx: existing.currentStopIdx !== undefined ? existing.currentStopIdx : -1,
+            totalStops: stops.length || 10,
+            wasteCollected: existing.wasteCollected || 0,
+            stopsCompleted: existing.stopsCompleted || [],
+            stops: stops.length > 0 ? stops : (existing.stops || []),
+            done: existing.done || false,
+            astarMetrics: matchingRoute?.astarMetrics || existing.astarMetrics || { totalDistance: matchingRoute?.total_distance_km || 13.5, nodesExplored: 10 },
+            speed: existing.speed || '0 km/h (Standby)',
+            status: existing.status || 'Ready at Depot Hub',
+          };
+        });
+      });
+
       setLastRefreshed(new Date());
     } catch (err) {
       console.error('Failed to fetch data:', err);
@@ -235,20 +276,31 @@ function Dashboard() {
 
     showSimToast(`✅ A* optimized ${optimizedRoutes.length} routes — dispatching fleet!`);
 
-    // Initialize truck states for all vehicles simultaneously
-    const states = optimizedRoutes.map((route, idx) => ({
-      routeIdx: idx,
-      vehicleName: route.vehicle_name,
-      color: TRUCK_COLORS[idx % TRUCK_COLORS.length],
-      position: route.depot ? { lat: route.depot.lat, lng: route.depot.lng } : null,
-      currentStopIdx: -1,
-      totalStops: route.stops.length,
-      wasteCollected: 0,
-      stopsCompleted: [],
-      stops: [...route.stops].sort((a, b) => a.stop_order - b.stop_order),
-      done: false,
-      astarMetrics: route.astarMetrics,
-    }));
+    // Initialize truck states with full fleet metadata for all vehicles simultaneously
+    const states = optimizedRoutes.map((route, idx) => {
+      const fleetMeta = AMC_FLEET[idx] || getFleetVehicleMeta(idx);
+      return {
+        routeIdx: idx,
+        vehicleName: route.vehicle_name || fleetMeta.vehicleName,
+        plateNumber: fleetMeta.plateNumber,
+        model: fleetMeta.model,
+        capacityLiters: fleetMeta.capacityLiters,
+        fuelType: fleetMeta.fuelType,
+        driver: fleetMeta.driver,
+        zone: fleetMeta.zone,
+        color: TRUCK_COLORS[idx % TRUCK_COLORS.length],
+        position: route.depot ? { lat: route.depot.lat, lng: route.depot.lng } : { lat: fleetMeta.depotCoords[0], lng: fleetMeta.depotCoords[1] },
+        currentStopIdx: -1,
+        totalStops: route.stops.length,
+        wasteCollected: 0,
+        stopsCompleted: [],
+        stops: [...route.stops].sort((a, b) => a.stop_order - b.stop_order),
+        done: false,
+        astarMetrics: route.astarMetrics,
+        speed: '28 km/h (Active)',
+        status: 'En Route',
+      };
+    });
 
     truckStatesRef.current = states;
     setTruckStates(states);
@@ -275,17 +327,25 @@ function Dashboard() {
           const nextIdx = truck.currentStopIdx + 1;
 
           if (nextIdx >= truck.stops.length) {
-            return { ...truck, done: true, position: null };
+            return { 
+              ...truck, 
+              done: true, 
+              speed: '0 km/h (Docked)', 
+              status: 'Completed Route — Returned to Depot' 
+            };
           }
 
           const stop = truck.stops[nextIdx];
           const waste = Math.round((stop.fill_percent / 100) * 240);
           binsToReset.push(stop.bin_name);
+          const currentSpeed = 22 + Math.floor(Math.random() * 14);
 
           return {
             ...truck,
             currentStopIdx: nextIdx,
             position: { lat: stop.lat, lng: stop.lng },
+            speed: `${currentSpeed} km/h (Navigating)`,
+            status: `Servicing Stop #${nextIdx + 1} (${stop.bin_name})`,
             wasteCollected: truck.wasteCollected + waste,
             stopsCompleted: [...truck.stopsCompleted, {
               binName: stop.bin_name,
@@ -822,52 +882,198 @@ function Dashboard() {
           </div>
         </div>
 
-        <div className="stat-card stat-alerts">
+        <div className="stat-card stat-alerts stat-clickable" onClick={() => navigate('/notifications')} title="View all incident notifications">
           <div className="stat-top">
             <span className="stat-tag">Sensor Anomalies</span>
             <div className="stat-icon-wrapper icon-alerts"><Bell size={18} /></div>
           </div>
           <div className="stat-body">
             <div className="stat-value">{activeAlerts}</div>
-            <div className="stat-label">Active System Alerts</div>
+            <div className="stat-label">Active Alerts &amp; Notifications</div>
           </div>
           <div className="stat-footer">
-            <span className="stat-trend">Isolation Forest + Spikes</span>
+            <span className="stat-trend positive" style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+              View in Notification Center <ChevronRight size={12} />
+            </span>
           </div>
         </div>
 
-        <div className="stat-card stat-routes">
+        <div className="stat-card stat-routes stat-clickable" onClick={() => navigate('/fleet')} title="Open Fleet Tracker">
           <div className="stat-top">
-            <span className="stat-tag tag-dispatch">A* Fleet Dispatch</span>
+            <span className="stat-tag tag-dispatch">Fleet Control</span>
             <div className="stat-icon-wrapper icon-routes"><Truck size={18} /></div>
           </div>
           <div className="stat-body">
-            <div className="stat-value">{Math.min(routes.length, 4)}</div>
-            <div className="stat-label">Routes Dispatched</div>
+            <div className="stat-value">{Math.min(routes.length, 4) || 4}</div>
+            <div className="stat-label">Trucks Ready / Dispatched</div>
           </div>
           <div className="stat-footer">
-            <span className="stat-trend">4 Zones · A* + CVRP 100% Covered</span>
+            <span className="stat-trend positive" style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+              Open Dedicated Fleet Tracker <ChevronRight size={12} />
+            </span>
           </div>
         </div>
       </div>
 
-      {/* ── Predictive Intelligence Strip removed from here, now below map ── */}
+      {/* ── AMC Municipal Fleet Telemetry & Truck-Wise Live Tracking Section ── */}
+      <div className="fleet-tracking-dashboard-section" style={{ marginBottom: '24px' }}>
+        <div className="card">
+          <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+            <div className="card-header-titles">
+              <div className="card-badge badge-blue">AMC Municipal Fleet Telemetry</div>
+              <h3>Live Vehicle Tracking &amp; Driver Command</h3>
+            </div>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <span className={`pill-counter ${collectionActive ? 'pill-success' : ''}`}>
+                {collectionActive ? `🚛 ${activeTrucks} Trucks Moving Live` : '4 Vehicles on Standby / Depot'}
+              </span>
+              <button 
+                className="btn btn-primary" 
+                onClick={collectionActive ? undefined : (routes.length === 0 ? generateRoutes : startCollection)}
+                disabled={collectionActive || routeLoading}
+                style={{ padding: '8px 16px', fontSize: '0.85rem' }}
+              >
+                <Truck size={15} />
+                <span>{collectionActive ? 'Fleet In Transit' : 'Dispatch All 4 Trucks'}</span>
+              </button>
+              <button 
+                className="btn btn-secondary" 
+                onClick={() => navigate('/fleet')}
+                style={{ padding: '8px 14px', fontSize: '0.85rem' }}
+              >
+                <ExternalLink size={14} />
+                <span>Dedicated Fleet View</span>
+              </button>
+            </div>
+          </div>
+          <div className="card-body">
+            <div className="truck-grid-detailed">
+              {truckStates.map((truck, idx) => {
+                const isCollecting = collectionActive && !truck.done;
+                const progressPct = Math.min(100, Math.round(((truck.wasteCollected || 0) / (truck.capacityLiters || 10000)) * 100));
+                
+                return (
+                  <div 
+                    key={idx} 
+                    className={`truck-detail-card status-${truck.done ? 'done' : isCollecting ? 'active' : 'ready'}`}
+                  >
+                    {/* Top Bar: Plate Number & Live Status */}
+                    <div className="tdc-top-bar">
+                      <div className="tdc-plate-badge" title="AMC Municipal Vehicle Registration">
+                        <span className="plate-ind">IND</span>
+                        <span>{truck.plateNumber}</span>
+                      </div>
+                      <div className={`tdc-status-pill ${truck.done ? 'done' : isCollecting ? 'active' : 'ready'}`}>
+                        {isCollecting && <span className="live-ping-dot" />}
+                        <span>{truck.done ? 'Service Complete' : isCollecting ? 'En Route' : 'Ready at Depot'}</span>
+                      </div>
+                    </div>
 
-      {/* Map + Routes Section */}
-      <div className="dashboard-grid">
-        <div className="card map-card">
+                    {/* Vehicle Name, Color Marker & Model */}
+                    <div className="tdc-vehicle-info">
+                      <div className="tdc-name-row">
+                        <span className="tdc-color-marker" style={{ background: truck.color }}></span>
+                        <span className="tdc-vehicle-name">{truck.vehicleName}</span>
+                        <span className="tdc-zone-tag">{truck.zone}</span>
+                      </div>
+                      <div className="tdc-model-name">
+                        <Truck size={13} />
+                        <span>{truck.model}</span>
+                      </div>
+                    </div>
+
+                    {/* Driver Card with ID and Call Button */}
+                    <div className="tdc-driver-box">
+                      <div className="tdc-driver-avatar">
+                        <User size={15} />
+                      </div>
+                      <div className="tdc-driver-meta">
+                        <div className="tdc-driver-name">{truck.driver?.name}</div>
+                        <div className="tdc-driver-sub">ID: {truck.driver?.id} · {truck.driver?.phone}</div>
+                      </div>
+                      <a 
+                        href={`tel:${truck.driver?.phone}`} 
+                        className="tdc-call-btn" 
+                        title={`Call Driver ${truck.driver?.name}`}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Phone size={13} />
+                      </a>
+                    </div>
+
+                    {/* Telemetry Box: Speed, Target, Stops Done */}
+                    <div className="tdc-telemetry-box">
+                      <div className="tdc-telem-row">
+                        <span className="tdc-telem-label"><Gauge size={12} /> Live Speed</span>
+                        <span className="tdc-telem-val">{truck.speed || (isCollecting ? '26 km/h' : '0 km/h (Standby)')}</span>
+                      </div>
+                      <div className="tdc-telem-row">
+                        <span className="tdc-telem-label"><Navigation size={12} /> Target Stop</span>
+                        <span className="tdc-telem-val" title={truck.stops[truck.currentStopIdx]?.bin_name || 'Depot Hub'}>
+                          {truck.currentStopIdx >= 0 && truck.stops[truck.currentStopIdx]
+                            ? truck.stops[truck.currentStopIdx]?.bin_name
+                            : (truck.stops[0]?.bin_name || 'Central Depot')}
+                        </span>
+                      </div>
+                      <div className="tdc-telem-row">
+                        <span className="tdc-telem-label"><Activity size={12} /> Serviced Bins</span>
+                        <span className="tdc-telem-val">{truck.stopsCompleted?.length || 0} / {truck.totalStops || 10} stops</span>
+                      </div>
+
+                      {/* Waste Capacity Loaded Bar */}
+                      <div className="tdc-capacity-wrap">
+                        <div className="tdc-capacity-labels">
+                          <span>Waste Payload</span>
+                          <span>{truck.wasteCollected || 0}L / {truck.capacityLiters || 10000}L ({progressPct}%)</span>
+                        </div>
+                        <div className="tdc-capacity-track">
+                          <div 
+                            className="tdc-capacity-bar" 
+                            style={{ 
+                              width: `${progressPct}%`,
+                              background: truck.color 
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* A* Strip */}
+                    {truck.astarMetrics && (
+                      <div className="tdc-astar-strip">
+                        <Sparkles size={11} />
+                        <span>A* Path: {truck.astarMetrics.totalDistance || 12.5}km · {truck.astarMetrics.nodesExplored || 10} nodes</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Expansive Large Municipal Map Section ── */}
+      <div className="full-width-map-section">
+        <div className="card map-card large-map-card">
           <div className="card-header">
             <div className="card-header-titles">
-              <div className="card-badge">AMC Geospatial Grid</div>
-              <h3>Ahmedabad Municipal Smart Bin Network</h3>
+              <div className="card-badge">AMC Municipal Geospatial Grid</div>
+              <h3>Ahmedabad Smart Bin Network — 40 Bins &amp; LDCE Mega Dumpster</h3>
             </div>
-            <button className="btn btn-primary" onClick={generateRoutes} disabled={routeLoading || collectionActive}>
-              {routeLoading ? (
-                <><RefreshCw size={15} className="spin" /><span>Computing CVRP...</span></>
-              ) : (
-                <><Truck size={15} /><span>Generate Optimal Routes</span></>
-              )}
-            </button>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+              <button className="btn btn-secondary" onClick={() => navigate('/fleet')}>
+                <Truck size={15} />
+                <span>Open Fleet Tracker</span>
+              </button>
+              <button className="btn btn-primary" onClick={generateRoutes} disabled={routeLoading || collectionActive}>
+                {routeLoading ? (
+                  <><RefreshCw size={15} className="spin" /><span>Computing CVRP...</span></>
+                ) : (
+                  <><Truck size={15} /><span>Generate Optimal Routes</span></>
+                )}
+              </button>
+            </div>
           </div>
           <div className="card-body no-padding">
             <BinMap
@@ -882,21 +1088,6 @@ function Dashboard() {
             />
           </div>
         </div>
-
-        <div className="card route-card">
-          <div className="card-header">
-            <div className="card-header-titles">
-              <div className="card-badge badge-neutral">Fleet Dispatch</div>
-              <h3>Active Route Sequence</h3>
-            </div>
-            {routes.length > 0 && (
-              <span className="pill-counter">{routes.length} Vehicles</span>
-            )}
-          </div>
-          <div className="card-body scrollable-card-body">
-            <RoutePanel routes={routes} loading={routeLoading} />
-          </div>
-        </div>
       </div>
 
       {/* ── Predictive Fill Forecast — full width below map ── */}
@@ -909,29 +1100,15 @@ function Dashboard() {
         />
       </div>
 
-
-
-      {/* Alerts + Charts Section */}
-      <div className="dashboard-bottom">
-        <div className="card alerts-card">
-          <div className="card-header">
-            <div className="card-header-titles">
-              <div className="card-badge badge-amber">Incident Log</div>
-              <h3>Real-Time Alerts</h3>
-            </div>
-            <span className="pill-counter pill-warning">{activeAlerts} Active</span>
-          </div>
-          <div className="card-body scrollable-card-body">
-            <AlertsPanel alerts={alerts} />
-          </div>
-        </div>
-
+      {/* ── Fleet Analytics Full Width Section ── */}
+      <div className="dashboard-charts-full">
         <div className="card charts-card">
           <div className="card-header">
             <div className="card-header-titles">
               <div className="card-badge badge-blue">Fleet Analytics</div>
-              <h3>Waste Composition &amp; Levels</h3>
+              <h3>Waste Composition &amp; Fill Level Distribution</h3>
             </div>
+            <span className="pill-counter">40 Bins Monitored Across 5 AMC Zones</span>
           </div>
           <div className="card-body">
             <StatsCharts bins={bins} />

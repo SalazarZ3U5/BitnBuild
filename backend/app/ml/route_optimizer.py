@@ -136,7 +136,7 @@ def get_route_road_geometry(depot: dict, stops: list[dict]) -> tuple[list[list[f
         try:
             coords_str = ";".join(f"{lng:.6f},{lat:.6f}" for lat, lng in ordered_pts)
             url = f"https://router.project-osrm.org/route/v1/driving/{coords_str}?overview=full&geometries=geojson"
-            with httpx.Client(timeout=1.5) as client:
+            with httpx.Client(timeout=5.0) as client:
                 resp = client.get(url)
                 if resp.status_code == 200:
                     data = resp.json()

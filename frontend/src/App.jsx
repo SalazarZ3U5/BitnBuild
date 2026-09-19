@@ -1,8 +1,10 @@
 import { BrowserRouter as Router, Routes, Route, NavLink } from 'react-router-dom';
-import { LayoutDashboard, ScanLine, BarChart3, Recycle, Sparkles, Activity } from 'lucide-react';
+import { LayoutDashboard, ScanLine, BarChart3, Recycle, Sparkles, Activity, Truck, Bell } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import AnalyticsPage from './pages/AnalyticsPage';
 import ClassifyPage from './pages/ClassifyPage';
+import FleetTrackingPage from './pages/FleetTrackingPage';
+import NotificationsPage from './pages/NotificationsPage';
 import './App.css';
 
 function App() {
@@ -32,6 +34,18 @@ function App() {
                 <NavLink to="/" end className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
                   <LayoutDashboard size={18} className="nav-icon" />
                   <span>Overview & Map</span>
+                </NavLink>
+              </li>
+              <li>
+                <NavLink to="/fleet" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
+                  <Truck size={18} className="nav-icon" />
+                  <span>Fleet Tracker</span>
+                </NavLink>
+              </li>
+              <li>
+                <NavLink to="/notifications" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
+                  <Bell size={18} className="nav-icon" />
+                  <span>Notifications</span>
                 </NavLink>
               </li>
               <li>
@@ -69,6 +83,8 @@ function App() {
         <main className="main-content">
           <Routes>
             <Route path="/" element={<Dashboard />} />
+            <Route path="/fleet" element={<FleetTrackingPage />} />
+            <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/classify" element={<ClassifyPage />} />
             <Route path="/analytics" element={<AnalyticsPage />} />
           </Routes>
