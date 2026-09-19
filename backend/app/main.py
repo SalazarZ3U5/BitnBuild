@@ -78,7 +78,10 @@ async def lifespan(app: FastAPI):
             seed_database(db)
             print("[Startup] Synthetic data seeded!")
         else:
-            print(f"[Startup] {bin_count} bins already in database, skipping seed")
+            print(f"[Startup] Syncing accurate landmark locations for {bin_count} bins...")
+            from app.simulation.generate_synthetic_data import sync_accurate_landmark_bins
+            sync_accurate_landmark_bins(db)
+            print("[Startup] Landmark locations synchronized accurately!")
     finally:
         db.close()
 
@@ -100,6 +103,10 @@ async def broadcast_bin_update():
         db = SessionLocal()
         try:
             bins = db.query(Bin).all()
+            from app.models import Alert
+            from app.api.simulation import _sim_running, _sim_step_count
+            alerts = db.query(Alert).filter(Alert.is_active == True).order_by(Alert.created_at.desc()).limit(20).all()
+            all_critical = all((b.current_fill_percent or 0) >= 80.0 for b in bins) if bins else False
             data = {
                 "type": "bin_update",
                 "bins": [
@@ -108,12 +115,31 @@ async def broadcast_bin_update():
                         "name": b.name,
                         "lat": b.lat,
                         "lng": b.lng,
+                        "capacity_liters": b.capacity_liters,
                         "current_fill_percent": b.current_fill_percent,
                         "waste_type": b.waste_type.value if hasattr(b.waste_type, 'value') else b.waste_type,
                         "zone": b.zone,
                     }
                     for b in bins
                 ],
+                "alerts": [
+                    {
+                        "id": a.id,
+                        "bin_id": a.bin_id,
+                        "zone": a.zone,
+                        "alert_type": a.alert_type,
+                        "message": a.message,
+                        "severity": a.severity,
+                        "is_active": a.is_active,
+                        "created_at": a.created_at.isoformat() if a.created_at else None,
+                    }
+                    for a in alerts
+                ],
+                "sim_status": {
+                    "is_running": _sim_running,
+                    "step_count": _sim_step_count,
+                    "all_critical": all_critical,
+                }
             }
             await manager.broadcast(data)
         finally:

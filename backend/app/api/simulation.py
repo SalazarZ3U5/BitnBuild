@@ -51,6 +51,8 @@ class TogglePayload(BaseModel):
 async def _run_sim_loop():
     """Background loop that steps telemetry forward periodically."""
     global _sim_running, _sim_step_count
+    # Advance first step immediately upon start for instant UI feedback
+    await perform_simulation_step()
     while _sim_running:
         await asyncio.sleep(_sim_interval_seconds)
         if not _sim_running:
@@ -69,6 +71,9 @@ async def perform_simulation_step():
         now = datetime.datetime.now(datetime.timezone.utc)
         new_alerts = []
 
+        # Query active alerts once instead of 80 times in a loop
+        active_alerts = {(a.bin_id, a.severity): a for a in db.query(Alert).filter(Alert.is_active == True).all()}
+
         for b in bins:
             # Dynamic simulation rise: between 5.0% and 11.0% per step
             # Ensures green pins visibly turn to amber (>50%) and RED (>80%) rapidly
@@ -85,12 +90,7 @@ async def perform_simulation_step():
 
             # Threshold alerts
             if b.current_fill_percent >= 80.0:
-                existing = db.query(Alert).filter(
-                    Alert.bin_id == b.id,
-                    Alert.is_active == True,
-                    Alert.severity == "critical"
-                ).first()
-                if not existing:
+                if (b.id, "critical") not in active_alerts:
                     alert = Alert(
                         bin_id=b.id,
                         zone=b.zone,
@@ -101,13 +101,10 @@ async def perform_simulation_step():
                     )
                     db.add(alert)
                     new_alerts.append(alert)
+                    active_alerts[(b.id, "critical")] = alert
 
             elif b.current_fill_percent >= 50.0:
-                existing = db.query(Alert).filter(
-                    Alert.bin_id == b.id,
-                    Alert.is_active == True,
-                ).first()
-                if not existing:
+                if (b.id, "warning") not in active_alerts and (b.id, "critical") not in active_alerts:
                     alert = Alert(
                         bin_id=b.id,
                         zone=b.zone,
@@ -118,6 +115,7 @@ async def perform_simulation_step():
                     )
                     db.add(alert)
                     new_alerts.append(alert)
+                    active_alerts[(b.id, "warning")] = alert
 
         # Check if all bins hit critical capacity (>=80%)
         critical_count = sum(1 for b in bins if b.current_fill_percent >= 80.0)
@@ -168,7 +166,7 @@ def get_simulation_status(db: Session = Depends(get_db)):
 async def toggle_simulation(payload: TogglePayload):
     """Starts or stops automated background telemetry playback."""
     global _sim_running, _sim_task, _sim_interval_seconds
-    _sim_interval_seconds = payload.interval_seconds or 3.0
+    _sim_interval_seconds = payload.interval_seconds or 2.0
 
     if payload.enabled and not _sim_running:
         _sim_running = True
@@ -380,6 +378,8 @@ async def reset_simulation(db: Session = Depends(get_db)):
         _sim_task = None
 
     now = datetime.datetime.now(datetime.timezone.utc)
+    from app.simulation.generate_synthetic_data import sync_accurate_landmark_bins
+    sync_accurate_landmark_bins(db)
     bins = db.query(Bin).all()
     for b in bins:
         b.current_fill_percent = round(random.uniform(18.0, 38.0), 1)

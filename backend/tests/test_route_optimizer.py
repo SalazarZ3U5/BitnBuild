@@ -99,3 +99,68 @@ def test_optimize_routes_no_bins():
 
     result = optimize_routes(db, fill_threshold=60.0)
     assert result["routes"] == []
+
+
+def test_river_aware_distance_penalizes_river_crossing():
+    """Cross-river distance must be significantly greater than straight-line distance due to bridge routing."""
+    from app.ml.route_optimizer import river_aware_distance_km, haversine_km
+
+    # Navrangpura (West, lng ~72.556) to Khadia (East, lng ~72.581)
+    west_lat, west_lng = 23.0345, 72.5564
+    east_lat, east_lng = 23.0225, 72.5814
+
+    straight_dist = haversine_km(west_lat, west_lng, east_lat, east_lng)
+    river_dist = river_aware_distance_km(west_lat, west_lng, east_lat, east_lng)
+
+    assert river_dist > straight_dist * 1.3, f"River dist ({river_dist}) should exceed straight dist ({straight_dist}) with bridge routing"
+
+
+def test_route_geometry_includes_coordinates():
+    """Route road geometry must return a valid list of [lat, lng] coordinates."""
+    from app.ml.route_optimizer import get_route_road_geometry
+
+    depot = {"lat": 23.0345, "lng": 72.5564}
+    stops = [
+        {"lat": 23.0380, "lng": 72.5590},
+        {"lat": 23.0410, "lng": 72.5620},
+    ]
+
+    geometry, dist_km = get_route_road_geometry(depot, stops)
+    assert len(geometry) >= 3
+    assert dist_km > 0
+    for pt in geometry:
+        assert len(pt) == 2
+        assert 22.0 < pt[0] < 24.0  # valid Ahmedabad latitude
+        assert 72.0 < pt[1] < 73.0  # valid Ahmedabad longitude
+
+
+def test_cluster_bins_separates_river_banks():
+    """West bins should primarily be assigned to West depots and East bins to East depots."""
+    from app.ml.route_optimizer import _cluster_bins_by_vehicle
+    from app.models import Bin, Vehicle
+
+    west_vehicle = MagicMock(spec=Vehicle)
+    west_vehicle.id = 1
+    west_vehicle.depot_lat = 23.0345
+    west_vehicle.depot_lng = 72.5400  # Far West
+
+    east_vehicle = MagicMock(spec=Vehicle)
+    east_vehicle.id = 2
+    east_vehicle.depot_lat = 23.0125
+    east_vehicle.depot_lng = 72.6100  # Far East
+
+    west_bin = MagicMock(spec=Bin)
+    west_bin.id = 101
+    west_bin.lat = 23.0350
+    west_bin.lng = 72.5350  # West
+
+    east_bin = MagicMock(spec=Bin)
+    east_bin.id = 102
+    east_bin.lat = 23.0130
+    east_bin.lng = 72.6150  # East
+
+    clusters = _cluster_bins_by_vehicle([west_bin, east_bin], [west_vehicle, east_vehicle])
+    assert len(clusters) == 2
+    assert west_bin in clusters[0]
+    assert east_bin in clusters[1]
+

@@ -13,56 +13,301 @@ from app.models import Bin, FillReading, Vehicle, Alert, WasteType
 CENTER_LAT = 23.0225
 CENTER_LNG = 72.5714
 
-# Official AMC administrative zones with approximate geographic coordinates
-ZONES = {
-    "West Zone (Navrangpura)": {"lat_offset": 0.015, "lng_offset": -0.015, "bins": 8},
-    "North West Zone (Bodakdev)": {"lat_offset": 0.035, "lng_offset": -0.040, "bins": 8},
-    "South West Zone (Satellite)": {"lat_offset": -0.015, "lng_offset": -0.045, "bins": 8},
-    "Central Zone (Khadia/Riverfront)": {"lat_offset": 0.005, "lng_offset": 0.010, "bins": 8},
-    "East Zone (Bapunagar/Nikol)": {"lat_offset": 0.020, "lng_offset": 0.055, "bins": 8},
-}
+# Accurate Ahmedabad Landmark Locations with exact coordinates and zones:
+AHMEDABAD_LANDMARK_BINS = [
+    # ── West Zone (Navrangpura / Ashram Rd / C.G. Rd) ───────────────────────
+    {
+        "name": "Law Garden Market",
+        "zone": "West Zone (Navrangpura)",
+        "lat": 23.0232, "lng": 72.5574,
+        "capacity_liters": 240, "waste_type": WasteType.ORGANIC
+    },
+    {
+        "name": "C.G. Road Panchvati",
+        "zone": "West Zone (Navrangpura)",
+        "lat": 23.0265, "lng": 72.5582,
+        "capacity_liters": 360, "waste_type": WasteType.PLASTIC
+    },
+    {
+        "name": "C.G. Road Swastik Cross",
+        "zone": "West Zone (Navrangpura)",
+        "lat": 23.0335, "lng": 72.5588,
+        "capacity_liters": 480, "waste_type": WasteType.PAPER
+    },
+    {
+        "name": "Gujarat University Library",
+        "zone": "West Zone (Navrangpura)",
+        "lat": 23.0372, "lng": 72.5458,
+        "capacity_liters": 240, "waste_type": WasteType.PAPER
+    },
+    {
+        "name": "LD College of Engineering (Central Big Bin)",
+        "zone": "West Zone (Navrangpura)",
+        "lat": 23.0338, "lng": 72.5467,
+        "capacity_liters": 1200, "waste_type": WasteType.OTHER
+    },
+    {
+        "name": "Mithakhali Six Roads",
+        "zone": "West Zone (Navrangpura)",
+        "lat": 23.0278, "lng": 72.5620,
+        "capacity_liters": 240, "waste_type": WasteType.PLASTIC
+    },
+    {
+        "name": "Ambawadi Circle West",
+        "zone": "West Zone (Navrangpura)",
+        "lat": 23.0215, "lng": 72.5510,
+        "capacity_liters": 120, "waste_type": WasteType.METAL
+    },
+    {
+        "name": "Sardar Patel Stadium Navrangpura",
+        "zone": "West Zone (Navrangpura)",
+        "lat": 23.0420, "lng": 72.5645,
+        "capacity_liters": 480, "waste_type": WasteType.ORGANIC
+    },
 
-WASTE_TYPES = list(WasteType)
+    # ── North West Zone (Bodakdev / Vastrapur / Thaltej) ────────────────────
+    {
+        "name": "Science City Main Plaza",
+        "zone": "North West Zone (Bodakdev)",
+        "lat": 23.0785, "lng": 72.5020,
+        "capacity_liters": 480, "waste_type": WasteType.PLASTIC
+    },
+    {
+        "name": "Science City Road Circle",
+        "zone": "North West Zone (Bodakdev)",
+        "lat": 23.0720, "lng": 72.5110,
+        "capacity_liters": 360, "waste_type": WasteType.OTHER
+    },
+    {
+        "name": "Bodakdev Judges Bungalow Rd",
+        "zone": "North West Zone (Bodakdev)",
+        "lat": 23.0380, "lng": 72.5180,
+        "capacity_liters": 240, "waste_type": WasteType.ORGANIC
+    },
+    {
+        "name": "Sindhu Bhavan Taj Skyline",
+        "zone": "North West Zone (Bodakdev)",
+        "lat": 23.0425, "lng": 72.5080,
+        "capacity_liters": 360, "waste_type": WasteType.GLASS
+    },
+    {
+        "name": "Alpha One Mall Vastrapur",
+        "zone": "North West Zone (Bodakdev)",
+        "lat": 23.0402, "lng": 72.5312,
+        "capacity_liters": 480, "waste_type": WasteType.PLASTIC
+    },
+    {
+        "name": "Vastrapur Lake Garden",
+        "zone": "North West Zone (Bodakdev)",
+        "lat": 23.0365, "lng": 72.5295,
+        "capacity_liters": 360, "waste_type": WasteType.ORGANIC
+    },
+    {
+        "name": "IIM Ahmedabad Main Gate",
+        "zone": "North West Zone (Bodakdev)",
+        "lat": 23.0315, "lng": 72.5328,
+        "capacity_liters": 240, "waste_type": WasteType.PAPER
+    },
+    {
+        "name": "S.G. Highway Bodakdev Junction",
+        "zone": "North West Zone (Bodakdev)",
+        "lat": 23.0470, "lng": 72.5190,
+        "capacity_liters": 480, "waste_type": WasteType.OTHER
+    },
 
-AHMEDABAD_LANDMARKS = [
-    "Sabarmati Riverfront", "Kankaria Lake", "Manek Chowk", "Law Garden",
-    "Vastrapur Lake", "IIM Ahmedabad", "Science City", "Sindhu Bhavan",
-    "Kalupur Terminal", "Paldi Market", "Alpha One Mall", "Ellis Bridge",
-    "Sidi Saiyyed Plaza", "Bhadra Fort", "Prahlad Nagar Garden", "Gujarat University",
-    "Civil Hospital", "Gita Mandir Bus Port", "Naranpura Sports Complex", "Sarkhej Roza",
-    "Nehru Bridge", "Ambawadi Circle", "C.G. Road", "S.G. Highway"
+    # ── South West Zone (Satellite / Prahlad Nagar / Sarkhej) ───────────────
+    {
+        "name": "Prahlad Nagar Garden East",
+        "zone": "South West Zone (Satellite)",
+        "lat": 23.0125, "lng": 72.5080,
+        "capacity_liters": 360, "waste_type": WasteType.ORGANIC
+    },
+    {
+        "name": "Prahlad Nagar Corporate Road",
+        "zone": "South West Zone (Satellite)",
+        "lat": 23.0105, "lng": 72.5045,
+        "capacity_liters": 480, "waste_type": WasteType.PLASTIC
+    },
+    {
+        "name": "Satellite Shivranjani Cross",
+        "zone": "South West Zone (Satellite)",
+        "lat": 23.0210, "lng": 72.5320,
+        "capacity_liters": 360, "waste_type": WasteType.OTHER
+    },
+    {
+        "name": "Jodhpur Gam Cross Road",
+        "zone": "South West Zone (Satellite)",
+        "lat": 23.0180, "lng": 72.5230,
+        "capacity_liters": 240, "waste_type": WasteType.ORGANIC
+    },
+    {
+        "name": "Shyamal Cross Road BRTS",
+        "zone": "South West Zone (Satellite)",
+        "lat": 23.0135, "lng": 72.5285,
+        "capacity_liters": 360, "waste_type": WasteType.PLASTIC
+    },
+    {
+        "name": "Sarkhej Roza Heritage",
+        "zone": "South West Zone (Satellite)",
+        "lat": 22.9805, "lng": 72.5025,
+        "capacity_liters": 240, "waste_type": WasteType.ORGANIC
+    },
+    {
+        "name": "Sarkhej Highway Sanand Circle",
+        "zone": "South West Zone (Satellite)",
+        "lat": 22.9860, "lng": 72.5090,
+        "capacity_liters": 480, "waste_type": WasteType.OTHER
+    },
+    {
+        "name": "Vejalpur APMC Market",
+        "zone": "South West Zone (Satellite)",
+        "lat": 23.0035, "lng": 72.5210,
+        "capacity_liters": 360, "waste_type": WasteType.ORGANIC
+    },
+
+    # ── Central Zone (Old City / Khadia / Riverfront) ───────────────────────
+    {
+        "name": "Sabarmati Riverfront Vallabh Sadan",
+        "zone": "Central Zone (Khadia/Riverfront)",
+        "lat": 23.0335, "lng": 72.5695,
+        "capacity_liters": 360, "waste_type": WasteType.PLASTIC
+    },
+    {
+        "name": "Sabarmati Riverfront Event Centre",
+        "zone": "Central Zone (Khadia/Riverfront)",
+        "lat": 23.0220, "lng": 72.5718,
+        "capacity_liters": 480, "waste_type": WasteType.ORGANIC
+    },
+    {
+        "name": "Ellis Bridge Victoria Garden",
+        "zone": "Central Zone (Khadia/Riverfront)",
+        "lat": 23.0210, "lng": 72.5730,
+        "capacity_liters": 240, "waste_type": WasteType.OTHER
+    },
+    {
+        "name": "Nehru Bridge Lal Darwaja",
+        "zone": "Central Zone (Khadia/Riverfront)",
+        "lat": 23.0280, "lng": 72.5720,
+        "capacity_liters": 360, "waste_type": WasteType.PLASTIC
+    },
+    {
+        "name": "Sidi Saiyyed Mosque Plaza",
+        "zone": "Central Zone (Khadia/Riverfront)",
+        "lat": 23.0275, "lng": 72.5785,
+        "capacity_liters": 240, "waste_type": WasteType.OTHER
+    },
+    {
+        "name": "Bhadra Fort Teen Darwaja",
+        "zone": "Central Zone (Khadia/Riverfront)",
+        "lat": 23.0245, "lng": 72.5780,
+        "capacity_liters": 360, "waste_type": WasteType.ORGANIC
+    },
+    {
+        "name": "Manek Chowk Gold Bazaar",
+        "zone": "Central Zone (Khadia/Riverfront)",
+        "lat": 23.0220, "lng": 72.5870,
+        "capacity_liters": 480, "waste_type": WasteType.ORGANIC
+    },
+    {
+        "name": "Kalupur Railway Terminal",
+        "zone": "Central Zone (Khadia/Riverfront)",
+        "lat": 23.0265, "lng": 72.5990,
+        "capacity_liters": 480, "waste_type": WasteType.PLASTIC
+    },
+
+    # ── East Zone (Bapunagar / Nikol / Maninagar / Kankaria) ───────────────
+    {
+        "name": "Kankaria Lake Gate 1",
+        "zone": "East Zone (Bapunagar/Nikol)",
+        "lat": 23.0065, "lng": 72.5995,
+        "capacity_liters": 480, "waste_type": WasteType.PLASTIC
+    },
+    {
+        "name": "Kankaria Lake Balvatika",
+        "zone": "East Zone (Bapunagar/Nikol)",
+        "lat": 22.9985, "lng": 72.6020,
+        "capacity_liters": 360, "waste_type": WasteType.ORGANIC
+    },
+    {
+        "name": "Maninagar Railway Station",
+        "zone": "East Zone (Bapunagar/Nikol)",
+        "lat": 22.9980, "lng": 72.6105,
+        "capacity_liters": 480, "waste_type": WasteType.OTHER
+    },
+    {
+        "name": "Gita Mandir Central Bus Port",
+        "zone": "East Zone (Bapunagar/Nikol)",
+        "lat": 23.0135, "lng": 72.5875,
+        "capacity_liters": 480, "waste_type": WasteType.OTHER
+    },
+    {
+        "name": "Bapunagar Diamond Market",
+        "zone": "East Zone (Bapunagar/Nikol)",
+        "lat": 23.0425, "lng": 72.6280,
+        "capacity_liters": 360, "waste_type": WasteType.METAL
+    },
+    {
+        "name": "Bapunagar Industrial Estate",
+        "zone": "East Zone (Bapunagar/Nikol)",
+        "lat": 23.0480, "lng": 72.6340,
+        "capacity_liters": 480, "waste_type": WasteType.PLASTIC
+    },
+    {
+        "name": "Nikol Lake Garden",
+        "zone": "East Zone (Bapunagar/Nikol)",
+        "lat": 23.0520, "lng": 72.6510,
+        "capacity_liters": 360, "waste_type": WasteType.ORGANIC
+    },
+    {
+        "name": "Nikol Gam Ring Road Circle",
+        "zone": "East Zone (Bapunagar/Nikol)",
+        "lat": 23.0450, "lng": 72.6480,
+        "capacity_liters": 240, "waste_type": WasteType.PLASTIC
+    },
 ]
 
 
 def generate_bins(db: Session) -> list[Bin]:
-    """Create ~40 bins across Ahmedabad AMC zones."""
+    """Create 40 bins at authentic, verified Ahmedabad landmark locations."""
     bins = []
-    bin_counter = 1
-
-    for zone_name, zone_info in ZONES.items():
-        for i in range(zone_info["bins"]):
-            # Random position within the zone
-            lat = CENTER_LAT + zone_info["lat_offset"] + random.uniform(-0.012, 0.012)
-            lng = CENTER_LNG + zone_info["lng_offset"] + random.uniform(-0.012, 0.012)
-            capacity = random.choice([120, 240, 360, 480])
-            waste_type = random.choice(WASTE_TYPES)
-            landmark = random.choice(AHMEDABAD_LANDMARKS)
-
-            bin_obj = Bin(
-                name=f"{landmark} Bin {bin_counter}",
-                lat=round(lat, 6),
-                lng=round(lng, 6),
-                capacity_liters=capacity,
-                waste_type=waste_type,
-                zone=zone_name,
-                current_fill_percent=0.0,
-            )
-            db.add(bin_obj)
-            bins.append(bin_obj)
-            bin_counter += 1
+    for data in AHMEDABAD_LANDMARK_BINS:
+        bin_obj = Bin(
+            name=data["name"],
+            lat=round(data["lat"], 6),
+            lng=round(data["lng"], 6),
+            capacity_liters=data["capacity_liters"],
+            waste_type=data["waste_type"],
+            zone=data["zone"],
+            current_fill_percent=0.0,
+        )
+        db.add(bin_obj)
+        bins.append(bin_obj)
 
     db.flush()
     return bins
+
+
+def sync_accurate_landmark_bins(db: Session) -> list[Bin]:
+    """
+    Synchronizes existing database bins so their names, zones, and coordinates
+    accurately reflect authentic Ahmedabad landmarks.
+    """
+    existing_bins = db.query(Bin).order_by(Bin.id).all()
+    if not existing_bins:
+        return generate_bins(db)
+
+    for i, bin_obj in enumerate(existing_bins):
+        if i < len(AHMEDABAD_LANDMARK_BINS):
+            data = AHMEDABAD_LANDMARK_BINS[i]
+            bin_obj.name = data["name"]
+            bin_obj.zone = data["zone"]
+            bin_obj.lat = round(data["lat"], 6)
+            bin_obj.lng = round(data["lng"], 6)
+            bin_obj.capacity_liters = data["capacity_liters"]
+            bin_obj.waste_type = data["waste_type"]
+
+    db.commit()
+    return existing_bins
 
 
 def generate_fill_readings(db: Session, bins: list[Bin], days: int = 60):

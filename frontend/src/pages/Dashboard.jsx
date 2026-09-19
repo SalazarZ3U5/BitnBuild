@@ -104,7 +104,7 @@ function Dashboard() {
     setSimLoading(true);
     try {
       const nextState = !simRunning;
-      await api.post('/simulation/toggle', { enabled: nextState, interval_seconds: 3.0 });
+      await api.post('/simulation/toggle', { enabled: nextState, interval_seconds: 2.0 });
       setSimRunning(nextState);
       if (nextState) {
         setAllCritical(false);
@@ -113,8 +113,9 @@ function Dashboard() {
         setCollectionComplete(false);
         setTruckStates([]);
         setTotalWasteCollected(0);
+        await fetchData();
       }
-      showSimToast(nextState ? '▶ Automated telemetry stream started (+1h step every 3s)' : '⏸ Stream paused');
+      showSimToast(nextState ? '▶ Automated telemetry stream started (+1h step every 2s)' : '⏸ Stream paused');
     } catch (err) {
       console.error('Failed to toggle simulation', err);
     } finally {
@@ -353,19 +354,21 @@ function Dashboard() {
         try {
           const data = JSON.parse(event.data);
           if (data.type === 'bin_update') {
-            if (!collectionActiveRef.current) {
+            if (!collectionActiveRef.current && data.bins) {
               setBins(data.bins);
             }
-            setLastRefreshed(new Date());
-            const alertsRes = await api.get('/alerts');
-            setAlerts(alertsRes.data);
-            const statusRes = await api.get('/simulation/status');
-            setSimRunning(statusRes.data.is_running);
-            setSimStep(statusRes.data.step_count);
-            if (statusRes.data.all_critical) {
-              setAllCritical(true);
-              setSimRunning(false);
+            if (data.alerts) {
+              setAlerts(data.alerts);
             }
+            if (data.sim_status) {
+              setSimRunning(data.sim_status.is_running);
+              setSimStep(data.sim_status.step_count);
+              if (data.sim_status.all_critical) {
+                setAllCritical(true);
+                setSimRunning(false);
+              }
+            }
+            setLastRefreshed(new Date());
           }
         } catch (e) {
           console.warn('WS message parse error:', e);

@@ -67,6 +67,31 @@ function haversineKm(lat1, lng1, lat2, lng2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+// ── River-Aware Bridge Distance (km) ─────────────────────────────────────────
+const RIVER_LNG_THRESHOLD = 72.5715;
+const AHMEDABAD_BRIDGES = [
+  { lat: 23.0645, lng: 72.5835 }, // Subhash Bridge
+  { lat: 23.0410, lng: 72.5732 }, // Gandhi Bridge
+  { lat: 23.0282, lng: 72.5715 }, // Nehru Bridge
+  { lat: 23.0225, lng: 72.5710 }, // Ellis Bridge
+  { lat: 23.0112, lng: 72.5695 }, // Sardar Bridge
+  { lat: 22.9960, lng: 72.5645 }, // Dr. Ambedkar Bridge
+];
+
+function riverAwareDistanceKm(lat1, lng1, lat2, lng2) {
+  const crossesRiver = (lng1 < RIVER_LNG_THRESHOLD && lng2 > RIVER_LNG_THRESHOLD) ||
+                       (lng1 > RIVER_LNG_THRESHOLD && lng2 < RIVER_LNG_THRESHOLD);
+  if (!crossesRiver) {
+    return haversineKm(lat1, lng1, lat2, lng2) * 1.25;
+  }
+  let minBridgeDist = Infinity;
+  for (const b of AHMEDABAD_BRIDGES) {
+    const d = haversineKm(lat1, lng1, b.lat, b.lng) + haversineKm(b.lat, b.lng, lat2, lng2);
+    if (d < minBridgeDist) minBridgeDist = d;
+  }
+  return minBridgeDist * 1.25 + 1.5;
+}
+
 // ── Nearest-Neighbor Fallback (for n > 12) ───────────────────────────────────
 function nearestNeighborRoute(stops, dist) {
   const n = stops.length;
@@ -120,10 +145,10 @@ export function aStarOptimizeStops(stops, depot) {
     ...stops.map(s => ({ lat: s.lat, lng: s.lng })),
   ];
 
-  // Precompute full distance matrix
+  // Precompute full river-aware distance matrix
   const dist = Array.from({ length: nodes.length }, (_, i) =>
     Array.from({ length: nodes.length }, (_, j) =>
-      i === j ? 0 : haversineKm(nodes[i].lat, nodes[i].lng, nodes[j].lat, nodes[j].lng)
+      i === j ? 0 : riverAwareDistanceKm(nodes[i].lat, nodes[i].lng, nodes[j].lat, nodes[j].lng)
     )
   );
 

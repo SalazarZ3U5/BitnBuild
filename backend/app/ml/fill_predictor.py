@@ -12,27 +12,11 @@ from app.models import Bin, FillReading
 _OVERFLOW_CACHE = {}
 
 
-def predict_overflow(db: Session, bin_obj: Bin) -> dict:
+def predict_overflow(db: Session, bin_obj: Bin, use_prophet: bool = False) -> dict:
     """
-    Predict when a bin will overflow based on its historical and recent generation trends.
-
-    Returns:
-        {
-            "bin_id": int,
-            "current_fill_percent": float,
-            "fill_rate_per_day": float,
-            "fill_rate_per_hour": float,
-            "predicted_overflow_at": str | None,
-            "hours_until_overflow": float | None,
-        }
+    Predict when a bin will overflow based on its recent generation trends.
+    Uses ultra-fast linear trend forecasting with Prophet option for deep single-bin inspection.
     """
-    readings = (
-        db.query(FillReading)
-        .filter(FillReading.bin_id == bin_obj.id)
-        .order_by(FillReading.timestamp)
-        .all()
-    )
-
     current_fill = float(bin_obj.current_fill_percent or 0.0)
     result = {
         "bin_id": int(bin_obj.id),
@@ -44,31 +28,43 @@ def predict_overflow(db: Session, bin_obj: Bin) -> dict:
         "hours_until_overflow": None,
     }
 
+    # Query only recent 30 readings rather than 1,440 historical records
+    readings = (
+        db.query(FillReading)
+        .filter(FillReading.bin_id == bin_obj.id)
+        .order_by(FillReading.timestamp.desc())
+        .limit(30)
+        .all()
+    )
+    readings.reverse()
+
     if not readings:
-        # Fallback for bin with no readings
         rate_per_hour = 3.5
         hours_to_full = max(0.0, (100.0 - current_fill) / rate_per_hour)
-        now = datetime.datetime.utcnow()
+        now = datetime.datetime.now(datetime.timezone.utc)
         result["fill_rate_per_day"] = round(rate_per_hour * 24.0, 2)
         result["fill_rate_per_hour"] = round(rate_per_hour, 2)
         result["predicted_overflow_at"] = (now + datetime.timedelta(hours=hours_to_full)).isoformat()
         result["hours_until_overflow"] = round(hours_to_full, 2)
         return result
 
-    # Check cache (valid for 30s)
-    cache_key = bin_obj.id
-    now_ts = datetime.datetime.utcnow().timestamp()
+    # Check cache (valid for 60s)
+    cache_key = (bin_obj.id, use_prophet)
+    now_ts = datetime.datetime.now(datetime.timezone.utc).timestamp()
     if cache_key in _OVERFLOW_CACHE:
         cached_ts, cached_count, cached_fill, cached_res = _OVERFLOW_CACHE[cache_key]
-        if (now_ts - cached_ts < 30.0) and (cached_count == len(readings)) and (abs(cached_fill - current_fill) < 0.1):
+        if (now_ts - cached_ts < 60.0) and (abs(cached_fill - current_fill) < 0.2):
             res_copy = dict(cached_res)
             res_copy["current_fill_percent"] = round(current_fill, 2)
             return res_copy
 
-    try:
-        calculated = _predict_with_prophet(readings[-168:], bin_obj, result)
-    except Exception:
-        calculated = _predict_with_linear(readings[-168:], bin_obj, result)
+    if use_prophet:
+        try:
+            calculated = _predict_with_prophet(readings, bin_obj, result)
+        except Exception:
+            calculated = _predict_with_linear(readings, bin_obj, result)
+    else:
+        calculated = _predict_with_linear(readings, bin_obj, result)
 
     _OVERFLOW_CACHE[cache_key] = (now_ts, len(readings), current_fill, calculated)
     return calculated
