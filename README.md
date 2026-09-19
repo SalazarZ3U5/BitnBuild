@@ -15,7 +15,7 @@
 
 <p align="center">
   <b>Smart Municipal Waste Management System tailored for Ahmedabad Municipal Corporation (AMC)</b><br/>
-  Featuring ML overflow prediction, on-device CNN waste classification, river-aware Capacitated Vehicle Routing (CVRP), A* road-snapped pathfinding, and live WebSocket telemetry replay.
+  Featuring ML overflow prediction, on-device CNN waste classification, river-aware Capacitated Vehicle Routing (CVRP), A* road-snapped pathfinding, macro spatial analytics, and live WebSocket telemetry replay.
 </p>
 
 ---
@@ -55,6 +55,20 @@
       </p>
     </td>
   </tr>
+  <tr>
+    <td width="50%">
+      <h3>◆ Municipal Peak Hotspot: LD College</h3>
+      <p>
+        Configures <b>LD College of Engineering</b> as Ahmedabad's <b>#1 waste producer</b> with a dedicated <b>2,400L Mega Dumpster</b>, peak daily generation velocity (~48.5%/day), permanent top ranking on hotspot leaderboards, and real-time high-priority compactor dispatch alerts.
+      </p>
+    </td>
+    <td width="50%">
+      <h3>◆ Real-Time Simulation & Stress Testing</h3>
+      <p>
+        Front-and-center IoT telemetry engine on the primary dashboard supporting automated playback, <b>+1h manual ticks</b>, nominal baseline resets, and live anomaly injection (night market crowd surge, structural vandalism tilt, and thermal fire hazards).
+      </p>
+    </td>
+  </tr>
 </table>
 
 <br/>
@@ -69,7 +83,8 @@ flowchart TD
         UI[Interactive Dashboard & GIS Map]
         ClassifyUI[AI Waste Camera Classifier]
         HeatmapUI[Predictive Fill Slider & Heatmaps]
-        FleetUI[Live Multi-Truck Dispatch Simulation]
+        FleetUI[Dedicated Fleet Tracker & Truck Dossiers]
+        AnalyticsUI[Macro Intelligence & Hotspot Leaderboard]
     end
 
     subgraph Backend ["FastAPI Application Server"]
@@ -78,6 +93,7 @@ flowchart TD
         Predictor[Prophet / Regressor Time-Series]
         Optimizer[River-Aware CVRP & OSRM Engine]
         Telemetry[Synthetic IoT Telemetry Replayer]
+        Anomaly[IsolationForest Anomaly Detector]
     end
 
     subgraph External ["Services & Data Store"]
@@ -90,10 +106,12 @@ flowchart TD
     ClassifyUI -->|Image Upload| Classifier
     HeatmapUI -->|Forecast Request| Predictor
     FleetUI -->|Dispatch Fleet| Optimizer
+    AnalyticsUI -->|Hotspots & Totals| API
     Optimizer -->|Waypoints & Distance| OSRM
     API --> DB
     Predictor --> DB
     Telemetry --> DB
+    Anomaly --> DB
 ```
 
 <br/>
@@ -129,25 +147,48 @@ The system is calibrated with **40 authentic landmark bin locations** across 5 a
 
 ```
 ▶ West Zone (Navrangpura)
+   ├── LD College of Engineering (Central Big Bin · 2,400L · Citywide #1 Waste Producer 👑)
    ├── Law Garden Market · C.G. Road Panchvati · C.G. Road Swastik Cross
-   └── Gujarat University · Navrangpura Commerce · Mithakhali · Sardar Patel Stadium
+   └── Gujarat University Library · Mithakhali Six Roads · Ambawadi Circle · Sardar Patel Stadium
 
-▶ North-West Zone (Bodakdev / Vastrapur)
+▶ North-West Zone (Bodakdev / Vastrapur / Thaltej)
    ├── Science City Main Plaza · Science City Road · Bodakdev Judges Bungalow
    └── Sindhu Bhavan Taj Skyline · Alpha One Mall · Vastrapur Lake · IIM Ahmedabad
 
-▶ South-West Zone (Satellite / Sarkhej)
+▶ South-West Zone (Satellite / Prahlad Nagar / Sarkhej)
    ├── Prahlad Nagar Garden · Prahlad Nagar Corporate Rd · Satellite Shivranjani
    └── Jodhpur Gam · Shyamal Cross · Sarkhej Roza Monument · Vejalpur APMC
 
-▶ Central Zone (Old City / Riverfront)
+▶ Central Zone (Old City / Khadia / Riverfront)
    ├── Sabarmati Riverfront (Vallabh Sadan) · Riverfront Event Centre · Ellis Bridge
    └── Nehru Bridge Plaza · Sidi Saiyyed Mosque · Bhadra Fort · Manek Chowk · Kalupur
 
-▶ East Zone (Bapunagar / Nikol / Kankaria)
+▶ East Zone (Bapunagar / Nikol / Maninagar / Kankaria)
    ├── Kankaria Lake Gate 1 · Kankaria Lake Balvatika · Maninagar Railway Station
    └── Gita Mandir Bus Port · Bapunagar Diamond Market · Nikol Lake Garden
 ```
+
+<br/>
+
+---
+
+## ◈ Core Application Modules
+
+### 1. Central Operational Dashboard
+* **Prominent Simulation Card**: Positioned directly beneath the page header for immediate real-time control over the IoT sensor streaming playback engine, manual +1h tick advancement, nominal baseline resets, and municipal emergency stress testing.
+* **Special Mega-Producer Alert**: Displays an active alert for LD College of Engineering with 1-click compactor tracking.
+* **Live Fleet Status**: Above-map live cards detailing active trucks, completed stops, total liters gathered, and A* distance metrics.
+* **Interactive GIS Map**: Leaflet map featuring road-snapped river-aware polyline routes, pulsating hotspot fire-rings, and special styling for LDCE's 2,400L bin.
+
+### 2. Dedicated Fleet Tracking & Telemetry
+* Full-width map interface with dedicated vehicle grid cards located cleanly below the map.
+* Spacious, tabbed **Truck Dossier Modal** with structured sections for Driver credentials, sequenced route stops, and mechanical/AMC maintenance specs.
+
+### 3. Macro Intelligence & Analytics
+* **Volume Metrics**: Gross collected output, recyclability diversion percentage, and residual landfill volume.
+* **Hotspot Leaderboard Table**: Horizontal-scroll protected table ranking bins by daily fill velocity with LD College of Engineering pinned at `#1`.
+* **Autonomous Directives**: Cluster fill velocity breakdown with automated municipal dispatch recommendations.
+* **AI Recycling Suggestions**: Material segregation advice based on real-time collection telemetry.
 
 <br/>
 
@@ -161,7 +202,7 @@ The system is calibrated with **40 authentic landmark bin locations** across 5 a
 
 | Method | Endpoint | Description |
 | :---: | :--- | :--- |
-| `GET` | `/bins` | Retrieve all bins with real-time fill %, battery, and location |
+| `GET` | `/bins` | Retrieve all bins with real-time fill %, battery, capacity, and location |
 | `POST` | `/bins` | Register a new smart IoT bin |
 | `GET` | `/bins/{id}/readings` | Historical telemetry readings (60-day sawtooth logs) |
 | `POST` | `/classify` | Upload an image for instant on-device LargeNet classification |
@@ -170,10 +211,16 @@ The system is calibrated with **40 authentic landmark bin locations** across 5 a
 | `GET` | `/priorities` | Multi-factor weighted urgency ranking of bins |
 | `GET` | `/routes/today` | River-aware CVRP routes with OSRM street geometries |
 | `GET` | `/routes/predictive` | Proactive dispatch routes for anticipated overflow |
-| `GET` | `/alerts` | Active municipal alerts (overflow, tilt, thermal risk) |
+| `GET` | `/analytics/hotspots` | Spatial hotspot ranking (guaranteed LDCE #1 producer) |
+| `GET` | `/analytics/waste-totals` | Cumulative volumetric waste totals by category |
+| `GET` | `/analytics/patterns` | Spatial K-Means clusters and fill velocity patterns |
+| `GET` | `/recycling/suggestions` | AI-driven recycling optimization recommendations |
+| `GET` | `/alerts` | Active municipal alerts (overflow, tilt, thermal, special producer) |
 | `POST` | `/simulation/step` | Advance IoT sensor telemetry simulation by one step |
-| `POST` | `/simulation/inject-anomaly`| Inject live hardware anomalies (tilt tip-over, thermal fire, surge) |
-| `POST` | `/simulation/reset` | Restore all 40 bins to safe nominal green state (<38%) |
+| `POST` | `/simulation/toggle` | Toggle continuous live stream simulation (+1h every 2s) |
+| `POST` | `/simulation/fill-all-critical` | Surge all bins to critical (>80%) and LDCE to 100% |
+| `POST` | `/simulation/inject-anomaly` | Inject live hardware anomalies (tilt tip-over, thermal fire, surge) |
+| `POST` | `/simulation/reset` | Restore all bins to nominal state while preserving LDCE priority |
 | `WS` | `/ws` | Real-time live bi-directional telemetry broadcast socket |
 
 </details>
@@ -234,7 +281,7 @@ Machine Learning & Optimization:
   • Prophet         — Time-series forecasting for predictive collection
   • Google OR-Tools — Capacitated Vehicle Routing Problem (CVRP) solver
   • OSRM Engine     — Open Source Routing Machine road geometries
-  • scikit-learn    — IsolationForest spatial anomaly detection
+  • scikit-learn    — IsolationForest spatial anomaly detection & K-Means clustering
 ```
 
 <br/>

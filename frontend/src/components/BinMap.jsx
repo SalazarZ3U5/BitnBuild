@@ -43,7 +43,7 @@ function getBinMarkerIcon(bin, fillPercent, wasCollected, isBeingCollected, isBi
             <span class="big-bin-symbol">🏢</span>
             <span class="big-bin-pct">${wasCollected ? '✓' : roundedFill + '%'}</span>
           </div>
-          <div class="big-bin-pill-tag">LDCE 1200L</div>
+          <div class="big-bin-pill-tag">👑 LDCE 2400L #1</div>
         </div>
       `,
       iconSize: [64, 64],
@@ -64,6 +64,33 @@ function getBinMarkerIcon(bin, fillPercent, wasCollected, isBeingCollected, isBi
     iconSize: [32, 32],
     iconAnchor: [16, 16],
     popupAnchor: [0, -18],
+  });
+}
+
+function getHotspotMarkerIcon(bin, fillPercent, tier) {
+  const tierColors = {
+    critical: '#f43f5e',
+    high: '#f97316',
+    moderate: '#f59e0b',
+    low: '#10b981',
+  };
+  const color = tierColors[tier] || '#f43f5e';
+  const roundedFill = Math.round(fillPercent);
+  return L.divIcon({
+    className: 'bin-div-icon-wrapper',
+    html: `
+      <div class="hotspot-bin-pin">
+        <div class="hotspot-ring-outer" style="border-color: ${color}40"></div>
+        <div class="hotspot-ring-mid" style="border-color: ${color}80"></div>
+        <div class="hotspot-core" style="background: ${color}">
+          <span class="hotspot-icon">🔥</span>
+          <span class="hotspot-pct">${roundedFill}%</span>
+        </div>
+      </div>
+    `,
+    iconSize: [52, 52],
+    iconAnchor: [26, 26],
+    popupAnchor: [0, -28],
   });
 }
 
@@ -268,7 +295,7 @@ function TruckMarker({ truck, onSelectTruck }) {
   );
 }
 
-function BinMap({ bins, routes, truckStates = [], collectionActive, totalWasteCollected = 0, heatmapData = [], heatmapMode = false, heatmapHoursAhead = 0, onSelectTruck }) {
+function BinMap({ bins, routes, truckStates = [], collectionActive, totalWasteCollected = 0, heatmapData = [], heatmapMode = false, heatmapHoursAhead = 0, onSelectTruck, hotspotBinIds = new Set() }) {
   const center = [23.0225, 72.5714];
 
   // Derive collected bin names from all trucks
@@ -323,14 +350,18 @@ function BinMap({ bins, routes, truckStates = [], collectionActive, totalWasteCo
             (bin.name && (bin.name.toLowerCase().includes('ld college') || bin.name.toLowerCase().includes('big bin')))
           );
 
-          const icon = getBinMarkerIcon(bin, fillPercent, wasCollected, isBeingCollected, isBigBin);
+          const isHotspot = hotspotBinIds.has(bin.id);
+          const hotspotTier = isHotspot && bin._hotspotTier ? bin._hotspotTier : 'critical';
+          const icon = isHotspot && !wasCollected
+            ? getHotspotMarkerIcon(bin, fillPercent, hotspotTier)
+            : getBinMarkerIcon(bin, fillPercent, wasCollected, isBeingCollected, isBigBin);
 
           return (
             <Marker
-              key={`bin-${bin.id}-${Math.round(fillPercent)}-${wasCollected ? 'col' : 'uncol'}`}
+              key={`bin-${bin.id}-${Math.round(fillPercent)}-${wasCollected ? 'col' : 'uncol'}-${isHotspot ? 'hot' : 'std'}`}
               position={[bin.lat, bin.lng]}
               icon={icon}
-              zIndexOffset={isBigBin ? 900 : isBeingCollected ? 600 : 200}
+              zIndexOffset={isHotspot ? 1100 : isBigBin ? 900 : isBeingCollected ? 600 : 200}
             >
               <Popup className="modern-map-popup">
                 <div className="popup-card">
@@ -340,8 +371,8 @@ function BinMap({ bins, routes, truckStates = [], collectionActive, totalWasteCo
                   </div>
                   {isBigBin && (
                     <div className="popup-big-bin-banner">
-                      <span className="big-bin-crown">🏢</span>
-                      <span>Campus Mega Dumpster · 1,200L Capacity</span>
+                      <span className="big-bin-crown">👑</span>
+                      <span>#1 Municipal Producer · {bin.capacity_liters || 2400}L Mega Dumpster</span>
                     </div>
                   )}
                   <div className="popup-title">{bin.name}</div>

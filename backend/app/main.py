@@ -28,6 +28,7 @@ from app.api.routes import router as routes_router
 from app.api.alerts import router as alerts_router
 from app.api.analytics import router as analytics_router
 from app.api.simulation import router as simulation_router, set_broadcast_callback
+from app.api.recycling import router as recycling_router
 
 
 
@@ -179,6 +180,7 @@ app.include_router(routes_router)
 app.include_router(alerts_router)
 app.include_router(analytics_router)
 app.include_router(simulation_router)
+app.include_router(recycling_router)
 
 
 

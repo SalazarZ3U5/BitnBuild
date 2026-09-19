@@ -10,25 +10,20 @@ import {
   Navigation,
   Activity,
   Sparkles,
-  Clock,
   Fuel,
   Package,
   X,
   Award,
   Layers,
-  Calendar,
   AlertCircle
 } from 'lucide-react';
 
 export default function TruckDetailModal({ truck, onClose }) {
   const [activeTab, setActiveTab] = useState('telemetry');
 
-  // Close on Escape key
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape') {
-        onClose();
-      }
+      if (e.key === 'Escape') onClose();
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -43,284 +38,253 @@ export default function TruckDetailModal({ truck, onClose }) {
 
   const isCollecting = !truck.done && truck.currentStopIdx >= 0;
   const currentStop = truck.stops && truck.currentStopIdx >= 0 ? truck.stops[truck.currentStopIdx] : null;
+  const stopProgress = Math.round(((truck.stopsCompleted?.length || 0) / Math.max(truck.stops?.length || 1, 1)) * 100);
+
+  const tabs = [
+    { id: 'telemetry', label: 'Live Telemetry', icon: Activity },
+    { id: 'driver',    label: 'Driver',          icon: User },
+    { id: 'stops',     label: `Stops (${truck.stops?.length || 0})`, icon: Layers },
+    { id: 'specs',     label: 'Specs',            icon: ShieldCheck },
+  ];
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div 
-        className="truck-modal-container" 
+        className="tdm-container"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
       >
-        {/* ── Modal Header ── */}
-        <div className="truck-modal-header">
-          <div className="tm-header-left">
-            <div className="tm-color-indicator" style={{ background: truck.color }} />
-            <div>
-              <div className="tm-title-row">
-                <h2 className="tm-vehicle-name">{truck.vehicleName}</h2>
-                <div className="tdc-plate-badge tm-plate-badge" title="AMC Municipal Vehicle Registration">
-                  <span className="plate-ind">IND</span>
+        {/* ── Header ──────────────────────────────────────────────────────── */}
+        <div className="tdm-header">
+          <div className="tdm-header-left">
+            <div className="tdm-color-bar" style={{ background: truck.color }} />
+            <div className="tdm-title-block">
+              <div className="tdm-title-row">
+                <h2 className="tdm-vehicle-name">{truck.vehicleName}</h2>
+                <div className="tdm-plate">
+                  <span className="tdm-plate-ind">IND</span>
                   <span>{truck.plateNumber}</span>
                 </div>
               </div>
-              <div className="tm-subtitle-row">
-                <span className="tm-model-tag"><Truck size={13} /> {truck.model}</span>
-                <span className="tm-zone-tag"><MapPin size={13} /> {truck.zone}</span>
+              <div className="tdm-subtitle-row">
+                <span className="tdm-meta-tag"><Truck size={12} /> {truck.model}</span>
+                <span className="tdm-meta-tag"><MapPin size={12} /> {truck.zone}</span>
+                <span className="tdm-meta-tag"><Fuel size={12} /> {truck.fuelType}</span>
               </div>
             </div>
           </div>
 
-          <div className="tm-header-right">
-            <div className={`tdc-status-pill ${truck.done ? 'done' : isCollecting ? 'active' : 'ready'}`}>
+          <div className="tdm-header-right">
+            <div className={`tdm-status-badge ${truck.done ? 'done' : isCollecting ? 'active' : 'ready'}`}>
               {isCollecting && <span className="live-ping-dot" />}
-              <span>{truck.done ? 'Service Complete' : isCollecting ? 'En Route Live' : 'Depot Standby'}</span>
+              {truck.done ? 'Route Complete' : isCollecting ? 'En Route Live' : 'Depot Standby'}
             </div>
-            <button className="tm-close-btn" onClick={onClose} aria-label="Close popup">
+            <button className="tdm-close-btn" onClick={onClose} aria-label="Close">
               <X size={18} />
             </button>
           </div>
         </div>
 
-        {/* ── Quick Stats Strip ── */}
-        <div className="tm-quick-strip">
-          <div className="tm-quick-item">
-            <span className="tm-quick-label">Operating Depot</span>
-            <span className="tm-quick-val">{truck.depotName || 'Central Municipal Hub'}</span>
+        {/* ── Quick Stats Bar ──────────────────────────────────────────────── */}
+        <div className="tdm-quick-bar">
+          <div className="tdm-quick-item">
+            <span className="tdm-q-label">Waste Collected</span>
+            <span className="tdm-q-val" style={{ color: truck.color }}>{truck.wasteCollected || 0}L</span>
           </div>
-          <div className="tm-quick-item">
-            <span className="tm-quick-label">Fuel / Powertrain</span>
-            <span className="tm-quick-val highlight-fuel">{truck.fuelType || 'CNG Green Fleet'}</span>
+          <div className="tdm-q-divider" />
+          <div className="tdm-quick-item">
+            <span className="tdm-q-label">Stops Done</span>
+            <span className="tdm-q-val">{truck.stopsCompleted?.length || 0} / {truck.stops?.length || 0}</span>
           </div>
-          <div className="tm-quick-item">
-            <span className="tm-quick-label">Compactor Tank</span>
-            <span className="tm-quick-val">{truck.capacityLiters || 5000} Liters</span>
+          <div className="tdm-q-divider" />
+          <div className="tdm-quick-item">
+            <span className="tdm-q-label">Route Progress</span>
+            <span className="tdm-q-val">{stopProgress}%</span>
           </div>
-          <div className="tm-quick-item">
-            <span className="tm-quick-label">Assigned Driver</span>
-            <span className="tm-quick-val">{truck.driver?.name || 'Assigned Staff'}</span>
+          <div className="tdm-q-divider" />
+          <div className="tdm-quick-item">
+            <span className="tdm-q-label">Tank Capacity</span>
+            <span className="tdm-q-val">{truck.capacityLiters || 5000}L</span>
           </div>
         </div>
 
-        {/* ── Navigation Tabs ── */}
-        <div className="tm-tabs">
-          <button 
-            className={`tm-tab-btn ${activeTab === 'telemetry' ? 'active' : ''}`}
-            onClick={() => setActiveTab('telemetry')}
-          >
-            <Activity size={14} />
-            <span>Live Telemetry &amp; Payload</span>
-          </button>
-          <button 
-            className={`tm-tab-btn ${activeTab === 'driver' ? 'active' : ''}`}
-            onClick={() => setActiveTab('driver')}
-          >
-            <User size={14} />
-            <span>Driver Credentials</span>
-          </button>
-          <button 
-            className={`tm-tab-btn ${activeTab === 'stops' ? 'active' : ''}`}
-            onClick={() => setActiveTab('stops')}
-          >
-            <Layers size={14} />
-            <span>Route Sequence ({truck.stops?.length || 0} stops)</span>
-          </button>
-          <button 
-            className={`tm-tab-btn ${activeTab === 'specs' ? 'active' : ''}`}
-            onClick={() => setActiveTab('specs')}
-          >
-            <ShieldCheck size={14} />
-            <span>Vehicle Specifications</span>
-          </button>
+        {/* ── Tab Bar ─────────────────────────────────────────────────────── */}
+        <div className="tdm-tab-bar">
+          {tabs.map(tab => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                className={`tdm-tab ${activeTab === tab.id ? 'tdm-tab-active' : ''}`}
+                onClick={() => setActiveTab(tab.id)}
+              >
+                <Icon size={15} />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
         </div>
 
-        {/* ── Modal Body Content ── */}
-        <div className="truck-modal-body">
-          {/* TAB 1: LIVE TELEMETRY */}
+        {/* ── Tab Content ─────────────────────────────────────────────────── */}
+        <div className="tdm-body">
+
+          {/* TAB: LIVE TELEMETRY */}
           {activeTab === 'telemetry' && (
-            <div className="tm-tab-content tm-telemetry-content">
-              {/* Payload Meter Card */}
-              <div className="tm-card tm-payload-card">
-                <div className="tm-card-title-row">
-                  <div className="tm-card-title">
-                    <Package size={16} />
-                    <span>Hydraulic Compaction Payload Tank</span>
-                  </div>
-                  <span className="tm-payload-pct" style={{ color: truck.color }}>
-                    {progressPct}% Loaded
-                  </span>
+            <div className="tdm-tab-content">
+              {/* Payload Tank */}
+              <div className="tdm-section">
+                <div className="tdm-section-header">
+                  <Package size={15} />
+                  <span>Hydraulic Compaction Tank</span>
+                  <span className="tdm-section-badge" style={{ color: truck.color }}>{progressPct}% Loaded</span>
                 </div>
-
-                <div className="tm-payload-gauge-track">
+                <div className="tdm-gauge-track">
                   <div 
-                    className="tm-payload-gauge-fill" 
+                    className="tdm-gauge-fill"
                     style={{ 
                       width: `${progressPct}%`,
-                      background: `linear-gradient(90deg, ${truck.color}, #10b981)`
-                    }} 
+                      background: `linear-gradient(90deg, ${truck.color}, #10b981)` 
+                    }}
                   />
                 </div>
-
-                <div className="tm-payload-metric-grid">
-                  <div className="tm-pm-item">
-                    <span className="tm-pm-label">Compacted Solid Waste</span>
-                    <span className="tm-pm-val">{truck.wasteCollected || 0} Liters</span>
+                <div className="tdm-payload-row">
+                  <div className="tdm-payload-item">
+                    <span className="tdm-pl-label">Compacted Waste</span>
+                    <span className="tdm-pl-val">{truck.wasteCollected || 0} L</span>
                   </div>
-                  <div className="tm-pm-item">
-                    <span className="tm-pm-label">Remaining Tank Capacity</span>
-                    <span className="tm-pm-val">
-                      {Math.max(0, (truck.capacityLiters || 5000) - (truck.wasteCollected || 0))} Liters
-                    </span>
+                  <div className="tdm-payload-item">
+                    <span className="tdm-pl-label">Remaining Capacity</span>
+                    <span className="tdm-pl-val">{Math.max(0, (truck.capacityLiters || 5000) - (truck.wasteCollected || 0))} L</span>
                   </div>
-                  <div className="tm-pm-item">
-                    <span className="tm-pm-label">Compactor Total Capacity</span>
-                    <span className="tm-pm-val">{truck.capacityLiters || 5000} L</span>
+                  <div className="tdm-payload-item">
+                    <span className="tdm-pl-label">Total Tank Size</span>
+                    <span className="tdm-pl-val">{truck.capacityLiters || 5000} L</span>
                   </div>
                 </div>
               </div>
 
-              {/* Real-time Telemetry Grid */}
-              <div className="tm-telem-grid">
-                <div className="tm-telem-card">
-                  <div className="tm-tc-header">
-                    <Gauge size={16} />
-                    <span>Telemetry Speed</span>
-                  </div>
-                  <div className="tm-tc-val">{truck.speed || (isCollecting ? '26 km/h' : '0 km/h (Depot Standby)')}</div>
-                  <div className="tm-tc-sub">GPS Real-time OBD-II Stream</div>
+              {/* Telemetry Grid */}
+              <div className="tdm-telem-grid">
+                <div className="tdm-telem-card">
+                  <div className="tdm-tc-icon"><Gauge size={18} /></div>
+                  <div className="tdm-tc-label">Live Speed</div>
+                  <div className="tdm-tc-value">{truck.speed || (isCollecting ? '26 km/h' : '0 km/h')}</div>
+                  <div className="tdm-tc-sub">GPS OBD-II Stream</div>
                 </div>
 
-                <div className="tm-telem-card">
-                  <div className="tm-tc-header">
-                    <Navigation size={16} />
-                    <span>Target Destination</span>
-                  </div>
-                  <div className="tm-tc-val tm-tc-val-dest" title={currentStop?.bin_name || 'Depot Hub'}>
+                <div className="tdm-telem-card">
+                  <div className="tdm-tc-icon"><Navigation size={18} /></div>
+                  <div className="tdm-tc-label">Target Waypoint</div>
+                  <div className="tdm-tc-value tdm-tc-ellipsis" title={currentStop?.bin_name || 'Depot Hub'}>
                     {currentStop ? currentStop.bin_name : (truck.done ? 'Pirana Disposal Plant' : 'Depot Hub')}
                   </div>
-                  <div className="tm-tc-sub">Next scheduled collection waypoint</div>
+                  <div className="tdm-tc-sub">Next scheduled stop</div>
                 </div>
 
-                <div className="tm-telem-card">
-                  <div className="tm-tc-header">
-                    <CheckCircle2 size={16} />
-                    <span>Service Fulfillment</span>
-                  </div>
-                  <div className="tm-tc-val">
-                    {truck.stopsCompleted?.length || 0} / {truck.totalStops || truck.stops?.length || 10}
-                  </div>
-                  <div className="tm-tc-sub">Bins emptied &amp; compacted</div>
+                <div className="tdm-telem-card">
+                  <div className="tdm-tc-icon"><CheckCircle2 size={18} /></div>
+                  <div className="tdm-tc-label">Service Fulfillment</div>
+                  <div className="tdm-tc-value">{truck.stopsCompleted?.length || 0} / {truck.totalStops || truck.stops?.length || 10}</div>
+                  <div className="tdm-tc-sub">Bins emptied</div>
                 </div>
 
-                <div className="tm-telem-card">
-                  <div className="tm-tc-header">
-                    <MapPin size={16} />
-                    <span>GPS Coordinates</span>
-                  </div>
-                  <div className="tm-tc-val" style={{ fontSize: '0.9rem' }}>
+                <div className="tdm-telem-card">
+                  <div className="tdm-tc-icon"><MapPin size={18} /></div>
+                  <div className="tdm-tc-label">GPS Coordinates</div>
+                  <div className="tdm-tc-value" style={{ fontSize: '0.82rem' }}>
                     {truck.position ? `${truck.position.lat.toFixed(4)}°N, ${truck.position.lng.toFixed(4)}°E` : '23.0345°N, 72.5564°E'}
                   </div>
-                  <div className="tm-tc-sub">Active Ahmedabad Municipal Grid</div>
+                  <div className="tdm-tc-sub">Ahmedabad Municipal Grid</div>
                 </div>
               </div>
 
-              {/* A* Optimization Stats */}
+              {/* A* Banner */}
               {truck.astarMetrics && (
-                <div className="tm-astar-banner">
-                  <div className="tm-astar-left">
-                    <Sparkles size={18} className="tm-astar-icon" />
-                    <div>
-                      <div className="tm-astar-title">A* Pathfinding &amp; CVRP Route Optimization Active</div>
-                      <div className="tm-astar-desc">
-                        Road-network trajectory calculated via OSRM graph search, avoiding pedestrian corridors &amp; respecting Sabarmati River bridges.
-                      </div>
-                    </div>
+                <div className="tdm-astar-banner">
+                  <Sparkles size={16} className="tdm-astar-icon" />
+                  <div className="tdm-astar-content">
+                    <div className="tdm-astar-title">A* Pathfinding + CVRP Route Optimization</div>
+                    <div className="tdm-astar-sub">Road-network trajectory via OSRM · Sabarmati River bridges respected</div>
                   </div>
-                  <div className="tm-astar-stats">
-                    <div className="tm-as-chip">
-                      <strong>{truck.astarMetrics.totalDistance || 13.5} km</strong> Total Distance
-                    </div>
-                    <div className="tm-as-chip">
-                      <strong>{truck.astarMetrics.nodesExplored || 10}</strong> Waypoints
-                    </div>
+                  <div className="tdm-astar-chips">
+                    <div className="tdm-astar-chip"><strong>{truck.astarMetrics.totalDistance || 13.5} km</strong> Distance</div>
+                    <div className="tdm-astar-chip"><strong>{truck.astarMetrics.nodesExplored || 10}</strong> Waypoints</div>
                   </div>
                 </div>
               )}
             </div>
           )}
 
-          {/* TAB 2: DRIVER CREDENTIALS */}
+          {/* TAB: DRIVER */}
           {activeTab === 'driver' && (
-            <div className="tm-tab-content tm-driver-content">
-              <div className="tm-driver-profile-card">
-                <div className="tm-driver-hero">
-                  <div className="tm-driver-avatar-lg">
-                    <User size={36} />
-                  </div>
-                  <div className="tm-driver-hero-info">
-                    <div className="tm-driver-name-lg">{truck.driver?.name || 'Rajesh Patel'}</div>
-                    <div className="tm-driver-badge-row">
-                      <span className="tm-badge-empid">EMP ID: {truck.driver?.empId || 'AMC-DRV-104'}</span>
-                      <span className="tm-badge-rating"><Award size={12} /> {truck.driver?.rating || '4.9 ★'} Operator</span>
-                      <span className="tm-badge-status">Active Duty</span>
-                    </div>
+            <div className="tdm-tab-content">
+              <div className="tdm-driver-hero-card">
+                <div className="tdm-driver-avatar">
+                  <User size={32} />
+                </div>
+                <div className="tdm-driver-hero-info">
+                  <div className="tdm-driver-name">{truck.driver?.name || 'Rajesh Patel'}</div>
+                  <div className="tdm-driver-badges">
+                    <span className="tdm-badge emp">EMP: {truck.driver?.empId || 'AMC-DRV-104'}</span>
+                    <span className="tdm-badge rating"><Award size={11} /> {truck.driver?.rating || '4.9 ★'}</span>
+                    <span className="tdm-badge active-badge">● Active Duty</span>
                   </div>
                 </div>
+                <a 
+                  href={`tel:${truck.driver?.phone}`} 
+                  className="btn btn-primary tdm-call-btn"
+                >
+                  <Phone size={15} />
+                  <span>Call Driver</span>
+                </a>
+              </div>
 
-                <div className="tm-driver-details-grid">
-                  <div className="tm-dd-item">
-                    <span className="tm-dd-label">Mobile Contact</span>
-                    <span className="tm-dd-val">{truck.driver?.phone || '+91 98251 44821'}</span>
-                  </div>
-                  <div className="tm-dd-item">
-                    <span className="tm-dd-label">Total Commercial Experience</span>
-                    <span className="tm-dd-val">{truck.driver?.experience || '8 Years'}</span>
-                  </div>
-                  <div className="tm-dd-item">
-                    <span className="tm-dd-label">Assigned Duty Shift</span>
-                    <span className="tm-dd-val">{truck.driver?.shift || 'Morning Shift (06:00 - 14:00)'}</span>
-                  </div>
-                  <div className="tm-dd-item">
-                    <span className="tm-dd-label">License Category</span>
-                    <span className="tm-dd-val">{truck.driver?.licenseType || 'Commercial Heavy (HMV)'}</span>
-                  </div>
-                  <div className="tm-dd-item">
-                    <span className="tm-dd-label">Assigned Municipal Sector</span>
-                    <span className="tm-dd-val">{truck.zone || 'West Zone'}</span>
-                  </div>
-                  <div className="tm-dd-item">
-                    <span className="tm-dd-label">Medical &amp; Police Verification</span>
-                    <span className="tm-dd-val tm-verified"><ShieldCheck size={14} /> AMC Certified &amp; Cleared</span>
-                  </div>
+              <div className="tdm-driver-details">
+                <div className="tdm-dd-row">
+                  <span className="tdm-dd-label">Mobile Contact</span>
+                  <span className="tdm-dd-val">{truck.driver?.phone || '+91 98251 44821'}</span>
                 </div>
-
-                <div className="tm-driver-actions">
-                  <a 
-                    href={`tel:${truck.driver?.phone}`} 
-                    className="btn btn-primary tm-btn-call"
-                  >
-                    <Phone size={15} />
-                    <span>Call Driver Direct ({truck.driver?.phone})</span>
-                  </a>
+                <div className="tdm-dd-row">
+                  <span className="tdm-dd-label">Experience</span>
+                  <span className="tdm-dd-val">{truck.driver?.experience || '8 Years'}</span>
+                </div>
+                <div className="tdm-dd-row">
+                  <span className="tdm-dd-label">Duty Shift</span>
+                  <span className="tdm-dd-val">{truck.driver?.shift || 'Morning Shift (06:00 – 14:00)'}</span>
+                </div>
+                <div className="tdm-dd-row">
+                  <span className="tdm-dd-label">License Category</span>
+                  <span className="tdm-dd-val">{truck.driver?.licenseType || 'Commercial Heavy (HMV)'}</span>
+                </div>
+                <div className="tdm-dd-row">
+                  <span className="tdm-dd-label">Assigned Zone</span>
+                  <span className="tdm-dd-val">{truck.zone || 'West Zone'}</span>
+                </div>
+                <div className="tdm-dd-row">
+                  <span className="tdm-dd-label">Verification Status</span>
+                  <span className="tdm-dd-val tdm-dd-verified">
+                    <ShieldCheck size={13} /> AMC Certified &amp; Cleared
+                  </span>
                 </div>
               </div>
             </div>
           )}
 
-          {/* TAB 3: ROUTE STOPS SEQUENCE */}
+          {/* TAB: STOPS SEQUENCE */}
           {activeTab === 'stops' && (
-            <div className="tm-tab-content tm-stops-content">
-              <div className="tm-stops-header">
+            <div className="tdm-tab-content">
+              <div className="tdm-stops-header">
                 <div>
-                  <h4>Full Stop Sequence — A* Optimized Waypoints</h4>
-                  <p>Chronological sequence of collection bins assigned to this vehicle for today's CVRP run.</p>
+                  <h4>A* Optimized Stop Sequence</h4>
+                  <p>Chronological waypoints for today's CVRP collection run.</p>
                 </div>
                 <span className="pill-counter">
-                  {truck.stopsCompleted?.length || 0} / {truck.stops?.length || 10} Done
+                  {truck.stopsCompleted?.length || 0} / {truck.stops?.length || 0} Done
                 </span>
               </div>
 
-              <div className="tm-stops-list">
+              <div className="tdm-stops-list">
                 {truck.stops && truck.stops.length > 0 ? (
                   truck.stops.map((stop, sIdx) => {
                     const isCompleted = truck.stopsCompleted?.some(sc => sc.binName === stop.bin_name || sc.stopIdx === sIdx);
@@ -329,91 +293,71 @@ export default function TruckDetailModal({ truck, onClose }) {
                     return (
                       <div 
                         key={sIdx} 
-                        className={`tm-stop-card ${isCompleted ? 'completed' : isTarget ? 'current-target' : 'pending'}`}
+                        className={`tdm-stop-row ${isCompleted ? 'stop-done' : isTarget ? 'stop-current' : 'stop-pending'}`}
                       >
-                        <div className="tm-stop-num">
-                          {isCompleted ? <CheckCircle2 size={16} /> : sIdx + 1}
+                        <div className="tdm-stop-num">
+                          {isCompleted ? <CheckCircle2 size={15} /> : <span>{sIdx + 1}</span>}
                         </div>
-                        <div className="tm-stop-main">
-                          <div className="tm-stop-name">{stop.bin_name}</div>
-                          <div className="tm-stop-meta">
-                            <span>Fill: <strong>{Math.round(stop.fill_percent)}%</strong></span>
-                            <span>·</span>
-                            <span>Waste: <strong>{Math.round(stop.fill_percent * 2.4)}L</strong></span>
+                        <div className="tdm-stop-info">
+                          <div className="tdm-stop-name">{stop.bin_name}</div>
+                          <div className="tdm-stop-meta">
+                            Fill: <strong>{Math.round(stop.fill_percent)}%</strong>
+                            <span> · </span>
+                            Waste: <strong>{Math.round(stop.fill_percent * 2.4)}L</strong>
                             {stop.lat && (
-                              <>
-                                <span>·</span>
-                                <span className="tm-stop-coords">{stop.lat.toFixed(4)}, {stop.lng.toFixed(4)}</span>
-                              </>
+                              <span className="tdm-stop-coords"> · {stop.lat.toFixed(4)}, {stop.lng.toFixed(4)}</span>
                             )}
                           </div>
                         </div>
-                        <div className="tm-stop-status">
+                        <div className="tdm-stop-badge">
                           {isCompleted ? (
-                            <span className="tm-badge-done">Serviced</span>
+                            <span className="tdm-sb-done">Serviced</span>
                           ) : isTarget ? (
-                            <span className="tm-badge-target">En Route</span>
+                            <span className="tdm-sb-current">En Route</span>
                           ) : (
-                            <span className="tm-badge-pending">Queued</span>
+                            <span className="tdm-sb-pending">Queued</span>
                           )}
                         </div>
                       </div>
                     );
                   })
                 ) : (
-                  <div className="tm-empty-stops">
+                  <div className="tdm-empty-state">
                     <AlertCircle size={24} />
-                    <p>No active stops assigned. Vehicle is standing by at depot or route has not been generated.</p>
+                    <p>No active stops assigned. Generate routes first.</p>
                   </div>
                 )}
               </div>
             </div>
           )}
 
-          {/* TAB 4: VEHICLE SPECIFICATIONS */}
+          {/* TAB: SPECS */}
           {activeTab === 'specs' && (
-            <div className="tm-tab-content tm-specs-content">
-              <div className="tm-specs-grid">
-                <div className="tm-spec-box">
-                  <span className="tm-sb-label">Commercial Vehicle Model</span>
-                  <span className="tm-sb-val">{truck.model}</span>
-                </div>
-                <div className="tm-spec-box">
-                  <span className="tm-sb-label">Registration Number (RTO)</span>
-                  <span className="tm-sb-val font-mono">{truck.plateNumber} (GJ-01 Ahmedabad)</span>
-                </div>
-                <div className="tm-spec-box">
-                  <span className="tm-sb-label">Compaction Mechanism</span>
-                  <span className="tm-sb-val">Hydraulic Ram Compactor (Ratio 3:1)</span>
-                </div>
-                <div className="tm-spec-box">
-                  <span className="tm-sb-label">Payload Capacity</span>
-                  <span className="tm-sb-val">{truck.capacityLiters || 5000} Liters Compactor Tank</span>
-                </div>
-                <div className="tm-spec-box">
-                  <span className="tm-sb-label">Powertrain &amp; Emissions</span>
-                  <span className="tm-sb-val">{truck.fuelType} · Zero/Low Emission Compliance</span>
-                </div>
-                <div className="tm-spec-box">
-                  <span className="tm-sb-label">Telematics Hardware</span>
-                  <span className="tm-sb-val">GPS/GLONASS Dual-Band Tracker + OBD-II Telemetry</span>
-                </div>
-                <div className="tm-spec-box">
-                  <span className="tm-sb-label">Assigned Municipal Depot</span>
-                  <span className="tm-sb-val">{truck.depotName}</span>
-                </div>
-                <div className="tm-spec-box">
-                  <span className="tm-sb-label">Solid Waste Disposal Hub</span>
-                  <span className="tm-sb-val">Pirana Municipal Solid Waste Management Complex</span>
-                </div>
+            <div className="tdm-tab-content">
+              <div className="tdm-specs-grid">
+                {[
+                  { label: 'Vehicle Model',        val: truck.model },
+                  { label: 'Registration (RTO)',   val: `${truck.plateNumber} (GJ-01 Ahmedabad)` },
+                  { label: 'Compaction Mechanism', val: 'Hydraulic Ram Compactor (3:1 Ratio)' },
+                  { label: 'Payload Capacity',     val: `${truck.capacityLiters || 5000} Liters` },
+                  { label: 'Powertrain',           val: `${truck.fuelType} · Low Emission` },
+                  { label: 'Telematics',           val: 'GPS/GLONASS Dual-Band + OBD-II' },
+                  { label: 'Operating Depot',      val: truck.depotName || 'Central Municipal Hub' },
+                  { label: 'Disposal Hub',         val: 'Pirana Municipal Solid Waste Complex' },
+                ].map(({ label, val }) => (
+                  <div key={label} className="tdm-spec-item">
+                    <span className="tdm-spec-label">{label}</span>
+                    <span className="tdm-spec-val">{val}</span>
+                  </div>
+                ))}
               </div>
 
-              <div className="tm-specs-cert-card">
-                <ShieldCheck size={24} className="tm-cert-icon" />
+              <div className="tdm-cert-card">
+                <ShieldCheck size={22} className="tdm-cert-icon" />
                 <div>
-                  <div className="tm-cert-title">Ahmedabad Municipal Corporation (AMC) Registered Asset</div>
-                  <div className="tm-cert-sub">
-                    Solid Waste Management Department · Smart City Mission Telemetry Integration · Real-Time Compliance Monitored.
+                  <div className="tdm-cert-title">AMC Registered Municipal Asset</div>
+                  <div className="tdm-cert-sub">
+                    Solid Waste Management Dept · Smart City Mission · Real-Time Compliance Monitored
                   </div>
                 </div>
               </div>
@@ -421,14 +365,14 @@ export default function TruckDetailModal({ truck, onClose }) {
           )}
         </div>
 
-        {/* ── Modal Footer ── */}
-        <div className="truck-modal-footer">
-          <div className="tm-footer-left">
+        {/* ── Footer ──────────────────────────────────────────────────────── */}
+        <div className="tdm-footer">
+          <div className="tdm-footer-live">
             <span className="live-dot" />
-            <span className="tm-footer-live-text">Live telemetry synchronized with central AMC municipal servers</span>
+            <span>Telemetry synced with AMC Central Command</span>
           </div>
           <button className="btn btn-secondary" onClick={onClose}>
-            Close Dossier
+            Close
           </button>
         </div>
       </div>

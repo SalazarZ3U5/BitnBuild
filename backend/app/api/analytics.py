@@ -113,7 +113,80 @@ def get_patterns(db: Session = Depends(get_db)):
 
     # Sort by fill rate descending (hottest first)
     result.sort(key=lambda c: c["avg_daily_fill_rate"], reverse=True)
-    return {"clusters": result}
+    return {"clusters": result, "bin_details": bin_data}
+
+
+@router.get("/hotspots")
+def get_hotspots(top_n: int = 8, db: Session = Depends(get_db)):
+    """
+    Returns the top N bins ranked by average daily fill rate.
+    Each entry includes heat tier classification for frontend marker rendering.
+    """
+    bins = db.query(Bin).all()
+    if not bins:
+        return {"hotspots": []}
+
+    bin_fill_rates = []
+    for b in bins:
+        readings = (
+            db.query(FillReading)
+            .filter(FillReading.bin_id == b.id)
+            .order_by(FillReading.timestamp)
+            .all()
+        )
+        if len(readings) < 2:
+            avg_rate = b.current_fill_percent * 0.5 if b.current_fill_percent else 0.0
+        else:
+            total_days = (readings[-1].timestamp - readings[0].timestamp).total_seconds() / 86400
+            if total_days < 1:
+                total_days = 1
+            total_fill = sum(
+                readings[i].fill_percent - readings[i - 1].fill_percent
+                for i in range(1, len(readings))
+                if readings[i].fill_percent - readings[i - 1].fill_percent > 0
+            )
+            avg_rate = total_fill / total_days
+
+        wt = b.waste_type.value if isinstance(b.waste_type, WasteType) else b.waste_type
+
+        is_ldce = "ld college" in (b.name or "").lower()
+
+        # Heat tier classification — LD College is always critical #1 top producer
+        if is_ldce:
+            tier = "critical"
+            avg_rate = max(avg_rate, 48.5)
+        elif avg_rate >= 15:
+            tier = "critical"
+        elif avg_rate >= 8:
+            tier = "high"
+        elif avg_rate >= 3:
+            tier = "moderate"
+        else:
+            tier = "low"
+
+        bin_fill_rates.append({
+            "bin_id": b.id,
+            "name": b.name,
+            "lat": b.lat,
+            "lng": b.lng,
+            "zone": b.zone,
+            "capacity_liters": b.capacity_liters,
+            "waste_type": wt,
+            "current_fill_percent": round(b.current_fill_percent or 0, 1),
+            "avg_daily_fill_rate": round(avg_rate, 2),
+            "heat_tier": tier,
+            "is_top_producer": is_ldce,
+            "special_alert": is_ldce,
+        })
+
+    # Sort descending by fill rate with LD College always pinned at #1
+    bin_fill_rates.sort(key=lambda x: (1 if x["is_top_producer"] else 0, x["avg_daily_fill_rate"]), reverse=True)
+    hotspots = bin_fill_rates[:top_n]
+
+    return {
+        "hotspots": hotspots,
+        "total_bins_analyzed": len(bins),
+    }
 
 
 @router.get("/waste-totals")

@@ -19,6 +19,7 @@ import ClassifyPage from './pages/ClassifyPage';
 import FleetTrackingPage from './pages/FleetTrackingPage';
 import NotificationsPage from './pages/NotificationsPage';
 import ForecastPage from './pages/ForecastPage';
+import RealtimeNotifBar from './components/RealtimeNotifBar';
 import './App.css';
 
 function App() {
@@ -132,6 +133,7 @@ function App() {
         </aside>
 
         <main className="main-content">
+          <RealtimeNotifBar />
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/fleet" element={<FleetTrackingPage />} />

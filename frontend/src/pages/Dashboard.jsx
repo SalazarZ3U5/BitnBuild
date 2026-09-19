@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Trash2, 
@@ -27,7 +27,8 @@ import {
   Clock,
   TrendingUp,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Crown
 } from 'lucide-react';
 import api from '../api';
 import BinMap from '../components/BinMap';
@@ -48,6 +49,11 @@ function Dashboard() {
   const [lastRefreshed, setLastRefreshed] = useState(new Date());
   const [selectedTruck, setSelectedTruck] = useState(null);
 
+  // Special LDCE Alert
+  const specialLdceAlert = useMemo(() => {
+    return alerts.find(a => a.is_active && (a.alert_type === 'special_producer' || (a.message && a.message.toLowerCase().includes('ld college'))));
+  }, [alerts]);
+
   // Simulation controls state
   const [simRunning, setSimRunning] = useState(false);
   const [simStep, setSimStep] = useState(0);
@@ -66,6 +72,16 @@ function Dashboard() {
   const [heatmapData, setHeatmapData] = useState([]);
   const [heatmapMode, setHeatmapMode] = useState(false);
   const [heatmapHoursAhead, setHeatmapHoursAhead] = useState(0);
+
+  // ── Hotspot state ────────────────────────────────────────────────────────
+  const [hotspots, setHotspots] = useState([]);
+  const hotspotBinIds = useMemo(() => new Set(hotspots.map(h => h.bin_id)), [hotspots]);
+  // Annotate bins with their hotspot tier so BinMap can look it up
+  const annotatedBins = useMemo(() => {
+    const tierMap = {};
+    hotspots.forEach(h => { tierMap[h.bin_id] = h.heat_tier; });
+    return bins.map(b => tierMap[b.id] ? { ...b, _hotspotTier: tierMap[b.id] } : b);
+  }, [bins, hotspots]);
 
 
   const hasAutoTriggered = useRef(false);
@@ -391,6 +407,10 @@ function Dashboard() {
           setTimeout(() => {
             setCollectionComplete(true);
             setCollectionActive(false);
+            // Fire global route-complete event for RealtimeNotifBar
+            window.dispatchEvent(new CustomEvent('amc:route-complete', {
+              detail: { message: `All ${updated.length} AMC trucks completed their collection routes successfully.` }
+            }));
           }, 800);
         }
       }, 1800);
@@ -409,6 +429,8 @@ function Dashboard() {
   useEffect(() => {
     fetchData();
     fetchSimStatus();
+    // Fetch hotspots on load
+    api.get('/analytics/hotspots').then(res => setHotspots(res.data?.hotspots || [])).catch(() => {});
 
     const wsUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000')
       .replace('http', 'ws') + '/ws';
@@ -552,287 +574,6 @@ function Dashboard() {
           <button className="btn btn-secondary btn-icon-only" onClick={fetchData} title="Refresh telemetry">
             <RefreshCw size={15} />
           </button>
-        </div>
-      </div>
-
-      {/* ── All-Critical Dispatch Banner ──────────────────────────────────── */}
-      {allCritical && !collectionActive && !collectionComplete && (
-        <div className="critical-dispatch-banner">
-          <div className="critical-banner-content">
-            <div className="critical-banner-icon">
-              <AlertTriangle size={24} />
-            </div>
-            <div className="critical-banner-text">
-              <h3>🚨 All Bins Critical — Fleet Dispatch Required</h3>
-              <p>All {totalBins} bins exceeded 80% capacity. {Math.min(routes.length, 4)} A*-optimized CVRP routes computed. Dispatch fleet to begin waste collection.</p>
-            </div>
-            <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-              <button 
-                className="critical-dispatch-btn"
-                onClick={startCollection}
-                disabled={routes.length === 0 || routeLoading}
-              >
-                <Truck size={18} />
-                <span>{routeLoading ? 'Computing...' : `Dispatch ${Math.min(routes.length, 4)} Trucks`}</span>
-              </button>
-              <button 
-                className="sim-btn sim-btn-reset-main"
-                onClick={handleResetSimulation}
-                disabled={simLoading}
-                style={{ padding: '10px 18px', fontSize: '0.9rem' }}
-                title="Reset simulation"
-              >
-                <RotateCcw size={15} />
-                <span>Reset Sim</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Multi-Truck Collection Dashboard ─────────────────────────────── */}
-      {collectionActive && truckStates.length > 0 && (
-        <div className="collection-dashboard">
-          <div className="collection-dash-header">
-            <div className="collection-dash-left">
-              <div className="collection-truck-icon-anim">
-                <Truck size={22} />
-              </div>
-              <div className="collection-dash-text">
-                <h3>🚛 Fleet Collection In Progress</h3>
-                <p>A* optimized routes — {activeTrucks} truck{activeTrucks !== 1 ? 's' : ''} active, {totalStopsDone}/{totalPlannedStops || 40} stops completed</p>
-              </div>
-            </div>
-            <div className="collection-banner-stats">
-              <div className="collection-stat-item">
-                <span className="collection-stat-value">{totalWasteCollected}L</span>
-                <span className="collection-stat-label">Total Collected</span>
-              </div>
-              <div className="collection-stat-divider"></div>
-              <div className="collection-stat-item">
-                <span className="collection-stat-value">{totalStopsDone}/{totalPlannedStops || 40}</span>
-                <span className="collection-stat-label">Stops Done</span>
-              </div>
-              <div className="collection-stat-divider"></div>
-              <div className="collection-stat-item">
-                <span className="collection-stat-value" style={{ color: avgFill > 70 ? '#f43f5e' : avgFill > 45 ? '#f59e0b' : '#10b981' }}>{avgFill}%</span>
-                <span className="collection-stat-label">Fleet Fill Level</span>
-              </div>
-              <div className="collection-stat-divider"></div>
-              <div className="collection-stat-item">
-                <span className="collection-stat-value" style={{ color: criticalBins > 0 ? '#f43f5e' : '#10b981' }}>{criticalBins}</span>
-                <span className="collection-stat-label">Remaining Critical</span>
-              </div>
-              <div className="collection-stat-divider"></div>
-              <div className="collection-stat-item">
-                <span className="collection-stat-value">{activeTrucks}/{truckStates.length}</span>
-                <span className="collection-stat-label">Trucks Active</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Per-Truck Widget Cards */}
-          <div className="truck-widgets-grid">
-            {truckStates.map((truck, idx) => (
-              <div 
-                key={idx} 
-                className={`truck-widget ${truck.done ? 'truck-done' : 'truck-active'}`}
-                onClick={() => setSelectedTruck(truck)}
-                style={{ cursor: 'pointer' }}
-                title="Click to view comprehensive truck dossier"
-              >
-                <div className="truck-widget-header">
-                  <div className="truck-widget-name-row">
-                    <span className="truck-color-dot" style={{ background: truck.color }}></span>
-                    <span className="truck-widget-name">{truck.vehicleName}</span>
-                  </div>
-                  {truck.done ? (
-                    <span className="truck-status-pill done"><CheckCircle2 size={11} /> Complete</span>
-                  ) : (
-                    <span className="truck-status-pill active">Collecting</span>
-                  )}
-                </div>
-                <div className="truck-widget-body">
-                  <div className="tw-stat-row">
-                    <div className="tw-stat">
-                      <span className="tw-stat-value" style={{ color: truck.color }}>{truck.wasteCollected}L</span>
-                      <span className="tw-stat-label">Collected</span>
-                    </div>
-                    <div className="tw-stat">
-                      <span className="tw-stat-value">{truck.stopsCompleted.length}/{truck.totalStops}</span>
-                      <span className="tw-stat-label">Stops</span>
-                    </div>
-                  </div>
-                  {!truck.done && truck.currentStopIdx >= 0 && (
-                    <div className="tw-current-stop">
-                      <MapPin size={11} />
-                      <span>{truck.stops[truck.currentStopIdx]?.bin_name}</span>
-                    </div>
-                  )}
-                  {truck.astarMetrics && (
-                    <div className="tw-astar-badge">
-                      <Sparkles size={10} />
-                      <span>A* · {truck.astarMetrics.nodesExplored} nodes · {truck.astarMetrics.totalDistance}km</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ── Collection Complete Summary ───────────────────────────────────── */}
-      {collectionComplete && (
-        <div className="collection-complete-banner">
-          <div className="collection-complete-header">
-            <CheckCircle2 size={24} />
-            <h3>Fleet Collection Complete — All Routes Serviced</h3>
-          </div>
-          <div className="collection-summary-grid">
-            <div className="summary-stat-card">
-              <Package size={20} />
-              <div className="summary-stat-value">{totalWasteCollected}L</div>
-              <div className="summary-stat-label">Total Waste Collected</div>
-            </div>
-            <div className="summary-stat-card">
-              <MapPin size={20} />
-              <div className="summary-stat-value">{totalStopsDone}</div>
-              <div className="summary-stat-label">Bins Serviced</div>
-            </div>
-            <div className="summary-stat-card">
-              <Truck size={20} />
-              <div className="summary-stat-value">{truckStates.length}</div>
-              <div className="summary-stat-label">Vehicles Dispatched</div>
-            </div>
-            <div className="summary-stat-card">
-              <CheckCircle2 size={20} />
-              <div className="summary-stat-value">{avgFill}%</div>
-              <div className="summary-stat-label">Avg Fill After</div>
-            </div>
-          </div>
-
-          {/* Per-Truck Breakdown */}
-          <div className="truck-breakdown-section">
-            <h4>Per-Vehicle Breakdown</h4>
-            <div className="truck-breakdown-grid">
-              {truckStates.map((truck, idx) => (
-                <div key={idx} className="truck-breakdown-card">
-                  <div className="tb-header">
-                    <span className="truck-color-dot" style={{ background: truck.color }}></span>
-                    <span className="tb-name">{truck.vehicleName}</span>
-                    <span className="tb-waste">{truck.wasteCollected}L</span>
-                  </div>
-                  <div className="tb-stops">
-                    {truck.stopsCompleted.map((stop, sIdx) => (
-                      <div key={sIdx} className="tb-stop-item">
-                        <span className="tb-stop-idx">{sIdx + 1}</span>
-                        <span className="tb-stop-name">{stop.binName}</span>
-                        <span className="tb-stop-waste">{stop.wasteCollected}L</span>
-                      </div>
-                    ))}
-                  </div>
-                  {truck.astarMetrics && (
-                    <div className="tb-astar">
-                      <Sparkles size={10} />
-                      A* optimized · {truck.astarMetrics.totalDistance}km path
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <button className="btn btn-primary" onClick={handleResetSimulation} style={{ marginTop: '20px', alignSelf: 'center', display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 24px', fontSize: '0.95rem' }}>
-            <RotateCcw size={16} />
-            <span>↺ Reset Entire Simulation & Re-Run</span>
-          </button>
-        </div>
-      )}
-
-      {/* Stats Metric Cards */}
-      <div className="stats-grid">
-        <div className="stat-card stat-total">
-          <div className="stat-top">
-            <span className="stat-tag">Fleet Size</span>
-            <div className="stat-icon-wrapper"><Trash2 size={18} /></div>
-          </div>
-          <div className="stat-body">
-            <div className="stat-value">{totalBins}</div>
-            <div className="stat-label">Monitored Bins</div>
-          </div>
-          <div className="stat-footer">
-            <span className="stat-trend positive">● Across 5 AMC City Zones</span>
-          </div>
-        </div>
-
-        <div className="stat-card stat-critical">
-          <div className="stat-top">
-            <span className="stat-tag tag-urgent">Urgent Attention</span>
-            <div className="stat-icon-wrapper icon-critical"><AlertTriangle size={18} /></div>
-          </div>
-          <div className="stat-body">
-            <div className="stat-value text-critical">{criticalBins}</div>
-            <div className="stat-label">Critical Overflow (&gt;80%)</div>
-          </div>
-          <div className="stat-footer">
-            <span className="stat-trend negative">● {criticalBinsPercent}% of Fleet Bins</span>
-          </div>
-        </div>
-
-        <div className="stat-card stat-fill">
-          <div className="stat-top">
-            <span className="stat-tag">Fleet Capacity</span>
-            <div className="stat-icon-wrapper icon-fill"><Gauge size={18} /></div>
-          </div>
-          <div className="stat-body">
-            <div className="stat-value">{avgFill}%</div>
-            <div className="stat-label">Average Fill Rate</div>
-          </div>
-          <div className="stat-progress-bar">
-            <div className="stat-progress-fill" style={{ 
-              width: `${avgFill}%`, 
-              backgroundColor: avgFill > 70 ? '#f43f5e' : avgFill > 45 ? '#f59e0b' : '#10b981',
-              transition: 'width 0.6s ease, background-color 0.6s ease'
-            }}></div>
-          </div>
-          <div className="stat-footer" style={{ marginTop: '8px' }}>
-            <span className="stat-trend" style={{ fontSize: '0.72rem', color: 'var(--ink-muted)' }}>
-              {filledBinsPercent}% of bins ≥50% fill
-            </span>
-          </div>
-        </div>
-
-        <div className="stat-card stat-alerts stat-clickable" onClick={() => navigate('/notifications')} title="View all incident notifications">
-          <div className="stat-top">
-            <span className="stat-tag">Sensor Anomalies</span>
-            <div className="stat-icon-wrapper icon-alerts"><Bell size={18} /></div>
-          </div>
-          <div className="stat-body">
-            <div className="stat-value">{activeAlerts}</div>
-            <div className="stat-label">Active Alerts &amp; Notifications</div>
-          </div>
-          <div className="stat-footer">
-            <span className="stat-trend positive" style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-              View in Notification Center <ChevronRight size={12} />
-            </span>
-          </div>
-        </div>
-
-        <div className="stat-card stat-routes stat-clickable" onClick={() => navigate('/fleet')} title="Open Dedicated Fleet Tracker">
-          <div className="stat-top">
-            <span className="stat-tag tag-dispatch">Fleet Control</span>
-            <div className="stat-icon-wrapper icon-routes"><Truck size={18} /></div>
-          </div>
-          <div className="stat-body">
-            <div className="stat-value">{Math.min(routes.length, 4) || 4}</div>
-            <div className="stat-label">Trucks Ready / Dispatched</div>
-          </div>
-          <div className="stat-footer">
-            <span className="stat-trend positive" style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-              Open Dedicated Fleet Tracker <ChevronRight size={12} />
-            </span>
-          </div>
         </div>
       </div>
 
@@ -994,6 +735,340 @@ function Dashboard() {
         )}
       </div>
 
+      {/* ── Special Alert: LD College of Engineering (#1 Municipal Producer) ── */}
+      {specialLdceAlert && (
+        <div className="analytics-special-alert-banner" style={{ marginBottom: '24px' }}>
+          <div className="asab-left">
+            <div className="asab-icon-pod">
+              <Crown size={22} className="asab-crown-icon" />
+            </div>
+            <div className="asab-text">
+              <div className="asab-header-row">
+                <span className="asab-badge">👑 MUNICIPAL #1 PRODUCER SPECIAL ALERT</span>
+                <span className="asab-zone-pill">West Zone (Navrangpura)</span>
+                <span className="asab-capacity-pill">2,400L Mega Dumpster</span>
+              </div>
+              <h3 className="asab-title">LD College of Engineering Critical Waste Priority</h3>
+              <p className="asab-desc">
+                {specialLdceAlert.message}
+              </p>
+            </div>
+          </div>
+          <button 
+            className="btn btn-primary"
+            onClick={() => navigate('/fleet')}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap', padding: '10px 18px', fontSize: '0.85rem' }}
+          >
+            <Truck size={15} />
+            <span>Track Fleet</span>
+          </button>
+        </div>
+      )}
+
+            {/* ── All-Critical Dispatch Banner ──────────────────────────────────── */}
+      {allCritical && !collectionActive && !collectionComplete && (
+        <div className="critical-dispatch-banner">
+          <div className="critical-banner-content">
+            <div className="critical-banner-icon">
+              <AlertTriangle size={24} />
+            </div>
+            <div className="critical-banner-text">
+              <h3>🚨 All Bins Critical — Fleet Dispatch Required</h3>
+              <p>All {totalBins} bins exceeded 80% capacity. {Math.min(routes.length, 4)} A*-optimized CVRP routes computed. Dispatch fleet to begin waste collection.</p>
+            </div>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <button 
+                className="critical-dispatch-btn"
+                onClick={startCollection}
+                disabled={routes.length === 0 || routeLoading}
+              >
+                <Truck size={18} />
+                <span>{routeLoading ? 'Computing...' : `Dispatch ${Math.min(routes.length, 4)} Trucks`}</span>
+              </button>
+              <button 
+                className="sim-btn sim-btn-reset-main"
+                onClick={handleResetSimulation}
+                disabled={simLoading}
+                style={{ padding: '10px 18px', fontSize: '0.9rem' }}
+                title="Reset simulation"
+              >
+                <RotateCcw size={15} />
+                <span>Reset Sim</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Multi-Truck Collection Dashboard ─────────────────────────────── */}
+      {collectionActive && truckStates.length > 0 && (
+        <div className="collection-dashboard">
+          <div className="collection-dash-header">
+            <div className="collection-dash-left">
+              <div className="collection-truck-icon-anim">
+                <Truck size={22} />
+              </div>
+              <div className="collection-dash-text">
+                <h3>🚛 Fleet Collection In Progress</h3>
+                <p>A* optimized routes — {activeTrucks} truck{activeTrucks !== 1 ? 's' : ''} active, {totalStopsDone}/{totalPlannedStops || 40} stops completed</p>
+              </div>
+            </div>
+            <div className="collection-banner-stats">
+              <div className="collection-stat-item">
+                <span className="collection-stat-value">{totalWasteCollected}L</span>
+                <span className="collection-stat-label">Total Collected</span>
+              </div>
+              <div className="collection-stat-divider"></div>
+              <div className="collection-stat-item">
+                <span className="collection-stat-value">{totalStopsDone}/{totalPlannedStops || 40}</span>
+                <span className="collection-stat-label">Stops Done</span>
+              </div>
+              <div className="collection-stat-divider"></div>
+              <div className="collection-stat-item">
+                <span className="collection-stat-value" style={{ color: avgFill > 70 ? '#f43f5e' : avgFill > 45 ? '#f59e0b' : '#10b981' }}>{avgFill}%</span>
+                <span className="collection-stat-label">Fleet Fill Level</span>
+              </div>
+              <div className="collection-stat-divider"></div>
+              <div className="collection-stat-item">
+                <span className="collection-stat-value" style={{ color: criticalBins > 0 ? '#f43f5e' : '#10b981' }}>{criticalBins}</span>
+                <span className="collection-stat-label">Remaining Critical</span>
+              </div>
+              <div className="collection-stat-divider"></div>
+              <div className="collection-stat-item">
+                <span className="collection-stat-value">{activeTrucks}/{truckStates.length}</span>
+                <span className="collection-stat-label">Trucks Active</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Collection Complete Summary ───────────────────────────────────── */}
+      {collectionComplete && (
+        <div className="collection-complete-banner">
+          <div className="collection-complete-header">
+            <CheckCircle2 size={24} />
+            <h3>Fleet Collection Complete — All Routes Serviced</h3>
+          </div>
+          <div className="collection-summary-grid">
+            <div className="summary-stat-card">
+              <Package size={20} />
+              <div className="summary-stat-value">{totalWasteCollected}L</div>
+              <div className="summary-stat-label">Total Waste Collected</div>
+            </div>
+            <div className="summary-stat-card">
+              <MapPin size={20} />
+              <div className="summary-stat-value">{totalStopsDone}</div>
+              <div className="summary-stat-label">Bins Serviced</div>
+            </div>
+            <div className="summary-stat-card">
+              <Truck size={20} />
+              <div className="summary-stat-value">{truckStates.length}</div>
+              <div className="summary-stat-label">Vehicles Dispatched</div>
+            </div>
+            <div className="summary-stat-card">
+              <CheckCircle2 size={20} />
+              <div className="summary-stat-value">{avgFill}%</div>
+              <div className="summary-stat-label">Avg Fill After</div>
+            </div>
+          </div>
+
+          {/* Per-Truck Breakdown */}
+          <div className="truck-breakdown-section">
+            <h4>Per-Vehicle Breakdown</h4>
+            <div className="truck-breakdown-grid">
+              {truckStates.map((truck, idx) => (
+                <div key={idx} className="truck-breakdown-card">
+                  <div className="tb-header">
+                    <span className="truck-color-dot" style={{ background: truck.color }}></span>
+                    <span className="tb-name">{truck.vehicleName}</span>
+                    <span className="tb-waste">{truck.wasteCollected}L</span>
+                  </div>
+                  <div className="tb-stops">
+                    {truck.stopsCompleted.map((stop, sIdx) => (
+                      <div key={sIdx} className="tb-stop-item">
+                        <span className="tb-stop-idx">{sIdx + 1}</span>
+                        <span className="tb-stop-name">{stop.binName}</span>
+                        <span className="tb-stop-waste">{stop.wasteCollected}L</span>
+                      </div>
+                    ))}
+                  </div>
+                  {truck.astarMetrics && (
+                    <div className="tb-astar">
+                      <Sparkles size={10} />
+                      A* optimized · {truck.astarMetrics.totalDistance}km path
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <button className="btn btn-primary" onClick={handleResetSimulation} style={{ marginTop: '20px', alignSelf: 'center', display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 24px', fontSize: '0.95rem' }}>
+            <RotateCcw size={16} />
+            <span>↺ Reset Entire Simulation & Re-Run</span>
+          </button>
+        </div>
+      )}
+
+      {/* Stats Metric Cards */}
+      <div className="stats-grid">
+        <div className="stat-card stat-total">
+          <div className="stat-top">
+            <span className="stat-tag">Fleet Size</span>
+            <div className="stat-icon-wrapper"><Trash2 size={18} /></div>
+          </div>
+          <div className="stat-body">
+            <div className="stat-value">{totalBins}</div>
+            <div className="stat-label">Monitored Bins</div>
+          </div>
+          <div className="stat-footer">
+            <span className="stat-trend positive">● Across 5 AMC City Zones</span>
+          </div>
+        </div>
+
+        <div className="stat-card stat-critical">
+          <div className="stat-top">
+            <span className="stat-tag tag-urgent">Urgent Attention</span>
+            <div className="stat-icon-wrapper icon-critical"><AlertTriangle size={18} /></div>
+          </div>
+          <div className="stat-body">
+            <div className="stat-value text-critical">{criticalBins}</div>
+            <div className="stat-label">Critical Overflow (&gt;80%)</div>
+          </div>
+          <div className="stat-footer">
+            <span className="stat-trend negative">● {criticalBinsPercent}% of Fleet Bins</span>
+          </div>
+        </div>
+
+        <div className="stat-card stat-fill">
+          <div className="stat-top">
+            <span className="stat-tag">Fleet Capacity</span>
+            <div className="stat-icon-wrapper icon-fill"><Gauge size={18} /></div>
+          </div>
+          <div className="stat-body">
+            <div className="stat-value">{avgFill}%</div>
+            <div className="stat-label">Average Fill Rate</div>
+          </div>
+          <div className="stat-progress-bar">
+            <div className="stat-progress-fill" style={{ 
+              width: `${avgFill}%`, 
+              backgroundColor: avgFill > 70 ? '#f43f5e' : avgFill > 45 ? '#f59e0b' : '#10b981',
+              transition: 'width 0.6s ease, background-color 0.6s ease'
+            }}></div>
+          </div>
+          <div className="stat-footer" style={{ marginTop: '8px' }}>
+            <span className="stat-trend" style={{ fontSize: '0.72rem', color: 'var(--ink-muted)' }}>
+              {filledBinsPercent}% of bins ≥50% fill
+            </span>
+          </div>
+        </div>
+
+        <div className="stat-card stat-alerts stat-clickable" onClick={() => navigate('/notifications')} title="View all incident notifications">
+          <div className="stat-top">
+            <span className="stat-tag">Sensor Anomalies</span>
+            <div className="stat-icon-wrapper icon-alerts"><Bell size={18} /></div>
+          </div>
+          <div className="stat-body">
+            <div className="stat-value">{activeAlerts}</div>
+            <div className="stat-label">Active Alerts &amp; Notifications</div>
+          </div>
+          <div className="stat-footer">
+            <span className="stat-trend positive" style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+              View in Notification Center <ChevronRight size={12} />
+            </span>
+          </div>
+        </div>
+
+        <div className="stat-card stat-routes stat-clickable" onClick={() => navigate('/fleet')} title="Open Dedicated Fleet Tracker">
+          <div className="stat-top">
+            <span className="stat-tag tag-dispatch">Fleet Control</span>
+            <div className="stat-icon-wrapper icon-routes"><Truck size={18} /></div>
+          </div>
+          <div className="stat-body">
+            <div className="stat-value">{Math.min(routes.length, 4) || 4}</div>
+            <div className="stat-label">Trucks Ready / Dispatched</div>
+          </div>
+          <div className="stat-footer">
+            <span className="stat-trend positive" style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+              Open Dedicated Fleet Tracker <ChevronRight size={12} />
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Per-Truck Live Cards (above map, shown when collection active) ── */}
+      {(collectionActive || collectionComplete) && truckStates.length > 0 && (
+        <div className="card truck-cards-above-map">
+          <div className="card-header">
+            <div className="card-header-titles">
+              <div className="card-badge badge-blue">
+                <Truck size={12} style={{ display: 'inline', marginRight: '4px' }} />
+                {collectionComplete ? 'Route Complete' : 'Live Fleet Tracking'}
+              </div>
+              <h3>{collectionComplete ? 'All Routes Serviced' : `Fleet In Progress — ${activeTrucks} Truck${activeTrucks !== 1 ? 's' : ''} Active`}</h3>
+            </div>
+            <span className="pill-counter">{totalStopsDone}/{totalPlannedStops || 40} Stops · {totalWasteCollected}L Collected</span>
+          </div>
+          <div className="card-body">
+            <div className="truck-cards-grid">
+              {truckStates.map((truck, idx) => (
+                <div
+                  key={idx}
+                  className={`truck-card-above-map ${truck.done ? 'truck-card-done' : 'truck-card-active'}`}
+                  onClick={() => setSelectedTruck(truck)}
+                  title="Click for full truck dossier"
+                >
+                  <div className="tca-header">
+                    <span className="tca-color-bar" style={{ background: truck.color }} />
+                    <div className="tca-name-col">
+                      <span className="tca-name">{truck.vehicleName}</span>
+                      <span className="tca-driver">{truck.driver?.name}</span>
+                    </div>
+                    {truck.done ? (
+                      <span className="tca-status-pill done"><CheckCircle2 size={11} /> Done</span>
+                    ) : (
+                      <span className="tca-status-pill active">En Route</span>
+                    )}
+                  </div>
+                  <div className="tca-stats">
+                    <div className="tca-stat">
+                      <span className="tca-stat-val" style={{ color: truck.color }}>{truck.wasteCollected}L</span>
+                      <span className="tca-stat-lbl">Collected</span>
+                    </div>
+                    <div className="tca-divider" />
+                    <div className="tca-stat">
+                      <span className="tca-stat-val">{truck.stopsCompleted.length}<span style={{ fontWeight: 400, color: 'var(--ink-muted)' }}>/{truck.totalStops}</span></span>
+                      <span className="tca-stat-lbl">Stops</span>
+                    </div>
+                    <div className="tca-divider" />
+                    <div className="tca-stat">
+                      <span className="tca-stat-val">{Math.round((truck.stopsCompleted.length / Math.max(truck.totalStops, 1)) * 100)}%</span>
+                      <span className="tca-stat-lbl">Progress</span>
+                    </div>
+                  </div>
+                  {!truck.done && truck.currentStopIdx >= 0 && truck.stops[truck.currentStopIdx] && (
+                    <div className="tca-current-stop">
+                      <MapPin size={10} />
+                      <span>{truck.stops[truck.currentStopIdx].bin_name}</span>
+                    </div>
+                  )}
+                  <div className="tca-progress-bar">
+                    <div
+                      className="tca-progress-fill"
+                      style={{
+                        width: `${Math.round((truck.stopsCompleted.length / Math.max(truck.totalStops, 1)) * 100)}%`,
+                        background: truck.done ? '#10b981' : truck.color,
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Expansive Large Municipal Map Section ── */}
       <div className="full-width-map-section">
         <div className="card map-card large-map-card">
@@ -1018,7 +1093,7 @@ function Dashboard() {
           </div>
           <div className="card-body no-padding">
             <BinMap
-              bins={bins}
+              bins={annotatedBins}
               routes={routes}
               truckStates={truckStates}
               collectionActive={collectionActive}
@@ -1027,6 +1102,7 @@ function Dashboard() {
               heatmapMode={heatmapMode}
               heatmapHoursAhead={heatmapHoursAhead}
               onSelectTruck={setSelectedTruck}
+              hotspotBinIds={hotspotBinIds}
             />
           </div>
         </div>

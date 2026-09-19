@@ -12,27 +12,33 @@ import {
   Compass, 
   Recycle, 
   Trash,
-  ArrowUpRight,
-  ShieldAlert
+  ShieldAlert,
+  Crown,
+  AlertTriangle,
+  Zap
 } from 'lucide-react';
 import api from '../api';
+import RecyclingSuggestionsPanel from '../components/RecyclingSuggestionsPanel';
 
 const PALETTE = ['#2563eb', '#10b981', '#f59e0b', '#8b5cf6', '#f43f5e', '#06b6d4'];
 
 function AnalyticsPage() {
   const [patterns, setPatterns] = useState(null);
   const [totals, setTotals] = useState(null);
+  const [hotspots, setHotspots] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
-        const [patternsRes, totalsRes] = await Promise.all([
+        const [patternsRes, totalsRes, hotspotsRes] = await Promise.all([
           api.get('/analytics/patterns'),
           api.get('/analytics/waste-totals'),
+          api.get('/analytics/hotspots?top_n=10'),
         ]);
         setPatterns(patternsRes.data);
         setTotals(totalsRes.data);
+        setHotspots(hotspotsRes.data?.hotspots || []);
       } catch (err) {
         console.error('Failed to fetch analytics:', err);
       } finally {
@@ -323,6 +329,108 @@ function AnalyticsPage() {
           </div>
         </div>
       </div>
+
+      {/* Special Alert Banner: LD College of Engineering (#1 Municipal Producer) */}
+      <div className="analytics-special-alert-banner">
+        <div className="asab-left">
+          <div className="asab-icon-pod">
+            <Crown size={22} className="asab-crown-icon" />
+          </div>
+          <div className="asab-text">
+            <div className="asab-header-row">
+              <span className="asab-badge">👑 MUNICIPAL MEGA-PRODUCER SPECIAL ALERT</span>
+              <span className="asab-zone-pill">West Zone (Navrangpura)</span>
+              <span className="asab-capacity-pill">2,400L Mega Dumpster</span>
+            </div>
+            <h3 className="asab-title">LD College of Engineering is Ahmedabad's #1 Waste Generator</h3>
+            <p className="asab-desc">
+              Central Big Bin telemetry indicates city-leading generation velocity (~48.5%/day, 1,164L/day). Priority automated compactor scheduling and continuous smart overflow monitoring active.
+            </p>
+          </div>
+        </div>
+        <div className="asab-stat-badge">
+          <span className="asab-stat-label">Generation Velocity</span>
+          <span className="asab-stat-value">Top #1 in AMC</span>
+        </div>
+      </div>
+
+      {/* Row 3: Top Waste Generation Hotspot Leaderboard */}
+      {hotspots.length > 0 && (
+        <div className="card hotspot-leaderboard-card">
+          <div className="card-header">
+            <div className="card-header-titles">
+              <div className="card-badge badge-coral">🔥 Highest Waste Generation</div>
+              <h3>Top Bins by Daily Fill Velocity</h3>
+            </div>
+            <span className="pill-counter">Ranked by avg fill rate · Updated live</span>
+          </div>
+          <div className="card-body">
+            <div className="hotspot-table-container">
+              <div className="hotspot-table">
+                <div className="hotspot-table-header">
+                  <span>Rank</span>
+                  <span>Bin Name</span>
+                  <span>Zone</span>
+                  <span>Waste Type</span>
+                  <span>Fill Rate</span>
+                  <span>Current Fill</span>
+                  <span>Heat Tier</span>
+                </div>
+                {hotspots.map((h, idx) => {
+                  const isLdce = idx === 0 || h.is_top_producer || (h.name && h.name.toLowerCase().includes('ld college'));
+                  const tierConfig = {
+                    critical: { label: 'Critical', color: '#f43f5e', bg: '#fff1f2' },
+                    high:     { label: 'High',     color: '#f97316', bg: '#fff7ed' },
+                    moderate: { label: 'Moderate', color: '#f59e0b', bg: '#fffbeb' },
+                    low:      { label: 'Low',      color: '#10b981', bg: '#ecfdf5' },
+                  }[h.heat_tier] || { label: h.heat_tier, color: '#64748b', bg: '#f1f5f9' };
+                  return (
+                    <div 
+                      key={h.bin_id} 
+                      className={`hotspot-table-row ${idx < 3 ? 'top-three' : ''} ${isLdce ? 'is-top-producer-row' : ''}`}
+                    >
+                      <span className="hotspot-rank">
+                        {isLdce ? '👑' : idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`}
+                      </span>
+                      <div className="hotspot-name-col">
+                        <span className="hotspot-bin-name" title={h.name}>{h.name}</span>
+                        {isLdce && (
+                          <span className="hotspot-ldce-tag">
+                            <Crown size={10} /> #1 City Producer (2,400L)
+                          </span>
+                        )}
+                      </div>
+                      <span className="hotspot-zone-badge" title={h.zone}>{h.zone}</span>
+                      <span className="hotspot-waste-type">{h.waste_type}</span>
+                      <span className="hotspot-fill-rate" style={{ color: tierConfig.color, fontWeight: 700 }}>
+                        {h.avg_daily_fill_rate}%/day
+                      </span>
+                      <div className="hotspot-fill-bar-wrap">
+                        <div className="hotspot-fill-bar-bg">
+                          <div
+                            className="hotspot-fill-bar-fill"
+                            style={{
+                              width: `${Math.min(h.current_fill_percent, 100)}%`,
+                              background: h.current_fill_percent > 80 ? '#f43f5e' : h.current_fill_percent > 50 ? '#f59e0b' : '#10b981'
+                            }}
+                          />
+                        </div>
+                        <span className="hotspot-fill-pct">{h.current_fill_percent}%</span>
+                      </div>
+                      <span className="hotspot-tier-badge" style={{ background: tierConfig.bg, color: tierConfig.color }}>
+                        {tierConfig.label}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Row 4: AI Recycling Suggestions */}
+      <RecyclingSuggestionsPanel />
     </div>
   );
 }

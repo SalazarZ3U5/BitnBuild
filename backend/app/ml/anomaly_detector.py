@@ -19,6 +19,38 @@ def run_anomaly_detection(db: Session) -> list[dict]:
     """
     new_alerts = []
 
+    # ── 0. Special Alert for LD College of Engineering (#1 Municipal Producer) ──
+    ldce_bin = db.query(Bin).filter(Bin.name.ilike("%ld college%")).first()
+    if ldce_bin:
+        ldce_alert = (
+            db.query(Alert)
+            .filter(
+                Alert.bin_id == ldce_bin.id,
+                Alert.alert_type == "special_producer",
+                Alert.is_active == True,
+            )
+            .first()
+        )
+        if not ldce_alert:
+            alert = Alert(
+                bin_id=ldce_bin.id,
+                zone=ldce_bin.zone,
+                alert_type="special_producer",
+                message=f"🚨 [SPECIAL ALERT · #1 WASTE PRODUCER] LD College of Engineering is Ahmedabad's highest volume waste generator ({ldce_bin.current_fill_percent:.0f}% fill of 2,400L capacity). High-capacity compactor allocated!",
+                severity="critical",
+                is_active=True,
+            )
+            db.add(alert)
+            db.flush()
+            new_alerts.append({
+                "id": alert.id,
+                "bin_id": ldce_bin.id,
+                "zone": ldce_bin.zone,
+                "alert_type": "special_producer",
+                "message": alert.message,
+                "severity": alert.severity,
+            })
+
     # ── 1. Threshold alerts ──────────────────────────────────────────────────
     high_fill_bins = db.query(Bin).filter(Bin.current_fill_percent > 85).all()
     for b in high_fill_bins:

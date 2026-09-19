@@ -5,12 +5,9 @@ import {
   Sparkles, 
   CheckCircle2, 
   RotateCcw, 
-  Play, 
   RefreshCw, 
-  Clock, 
   Activity, 
   Package, 
-  ArrowRight, 
   Gauge, 
   Navigation,
   User,
@@ -390,163 +387,173 @@ export default function FleetTrackingPage() {
         </div>
       </div>
 
-      {/* ── Large Fleet Map & Truck-Wise Live Tracking Display ──────────────── */}
-      <div className="dashboard-grid fleet-tracking-grid">
-        {/* Left Column: Fleet GIS Map */}
-        <div className="card map-card fleet-map-card">
-          <div className="card-header">
-            <div className="card-header-titles">
-              <div className="card-badge">Live Fleet GIS</div>
-              <h3>Ahmedabad Municipal Fleet Tracking Map</h3>
+      {/* ── Full-Width Map ─────────────────────────────────────────────────── */}
+      <div className="card map-card fleet-map-card">
+        <div className="card-header">
+          <div className="card-header-titles">
+            <div className="card-badge">Live Fleet GIS</div>
+            <h3>Ahmedabad Municipal Fleet Tracking Map</h3>
+          </div>
+          {collectionActive && (
+            <span className="pill-counter pill-success">
+              🚛 {activeTrucks} Trucks Moving Live
+            </span>
+          )}
+        </div>
+        <div className="card-body no-padding fleet-map-body">
+          <BinMap
+            bins={bins}
+            routes={routes}
+            truckStates={truckStates}
+            collectionActive={collectionActive}
+            totalWasteCollected={totalWasteCollected}
+            onSelectTruck={setSelectedTruck}
+          />
+        </div>
+      </div>
+
+      {/* ── Truck Cards Section ────────────────────────────────────────────── */}
+      <div className="fleet-vehicles-section">
+        <div className="fleet-section-header">
+          <div>
+            <div className="card-badge badge-blue" style={{ marginBottom: '6px' }}>
+              <Truck size={12} style={{ display: 'inline', marginRight: '4px' }} />
+              Real-Time Fleet Telemetry
             </div>
-            {collectionActive && (
-              <span className="pill-counter pill-success">
-                🚛 {activeTrucks} Trucks Moving Live
-              </span>
-            )}
+            <h3 className="fleet-section-title">Vehicle-by-Vehicle Status</h3>
           </div>
-          <div className="card-body no-padding fleet-map-body">
-            <BinMap
-              bins={bins}
-              routes={routes}
-              truckStates={truckStates}
-              collectionActive={collectionActive}
-              totalWasteCollected={totalWasteCollected}
-              onSelectTruck={setSelectedTruck}
-            />
-          </div>
+          <span className={`pill-counter ${collectionActive ? 'pill-success' : ''}`}>
+            {collectionActive ? `🚛 ${activeTrucks} Active` : '4 Vehicles Ready'}
+          </span>
         </div>
 
-        {/* Right Column: Truck-Wise Live Tracking (Replacing Active Stop Sequences) */}
-        <div className="card fleet-truck-tracking-card">
-          <div className="card-header">
-            <div className="card-header-titles">
-              <div className="card-badge badge-blue">Real-Time Fleet Telemetry</div>
-              <h3>Truck-Wise Live Tracking</h3>
-            </div>
-            <span className={`pill-counter ${collectionActive ? 'pill-success' : ''}`}>
-              {collectionActive ? `🚛 ${activeTrucks} Active` : '4 Vehicles Ready'}
-            </span>
-          </div>
-          <div className="card-body scrollable-truck-tracking-body">
-            <div className="fleet-truck-cards-stack">
-              {truckStates.map((truck, idx) => {
-                const isCollecting = collectionActive && !truck.done;
-                const progressPct = Math.min(100, Math.round(((truck.wasteCollected || 0) / (truck.capacityLiters || 10000)) * 100));
+        <div className="fleet-vehicles-grid">
+          {truckStates.map((truck, idx) => {
+            const isCollecting = collectionActive && !truck.done;
+            const progressPct = Math.min(100, Math.round(((truck.wasteCollected || 0) / (truck.capacityLiters || 10000)) * 100));
+            const stopProgress = Math.round(((truck.stopsCompleted?.length || 0) / Math.max(truck.totalStops, 1)) * 100);
 
-                return (
-                  <div 
-                    key={idx} 
-                    className={`truck-detail-card status-${truck.done ? 'done' : isCollecting ? 'active' : 'ready'}`}
-                    onClick={() => setSelectedTruck(truck)}
-                    title="Click to view comprehensive vehicle dossier & telemetry"
-                  >
-                    {/* Top Bar: Plate Number & Status */}
-                    <div className="tdc-top-bar">
-                      <div className="tdc-plate-badge" title="Municipal Vehicle Plate Registration">
-                        <span className="plate-ind">IND</span>
-                        <span>{truck.plateNumber}</span>
-                      </div>
-                      <div className={`tdc-status-pill ${truck.done ? 'done' : isCollecting ? 'active' : 'ready'}`}>
-                        {isCollecting && <span className="live-ping-dot" />}
-                        <span>{truck.done ? 'Service Complete' : isCollecting ? 'En Route' : 'Ready at Depot'}</span>
-                      </div>
+            return (
+              <div 
+                key={idx} 
+                className={`fleet-vehicle-card status-${truck.done ? 'done' : isCollecting ? 'active' : 'ready'}`}
+                onClick={() => setSelectedTruck(truck)}
+                title="Click to view comprehensive vehicle dossier & telemetry"
+              >
+                {/* Color accent bar */}
+                <div className="fvc-accent-bar" style={{ background: truck.color }} />
+
+                <div className="fvc-body">
+                  {/* Top: Plate + Status */}
+                  <div className="fvc-top-row">
+                    <div className="tdc-plate-badge" title="Municipal Vehicle Plate Registration">
+                      <span className="plate-ind">IND</span>
+                      <span>{truck.plateNumber}</span>
                     </div>
-
-                    {/* Vehicle Name, Color Marker & Model */}
-                    <div className="tdc-vehicle-info">
-                      <div className="tdc-name-row">
-                        <span className="tdc-color-marker" style={{ background: truck.color }}></span>
-                        <span className="tdc-vehicle-name">{truck.vehicleName}</span>
-                        <span className="tdc-zone-tag">{truck.zone}</span>
-                      </div>
-                      <div className="tdc-model-name">
-                        <Truck size={13} />
-                        <span>{truck.model}</span>
-                      </div>
+                    <div className={`tdc-status-pill ${truck.done ? 'done' : isCollecting ? 'active' : 'ready'}`}>
+                      {isCollecting && <span className="live-ping-dot" />}
+                      <span>{truck.done ? 'Complete' : isCollecting ? 'En Route' : 'Standby'}</span>
                     </div>
+                  </div>
 
-                    {/* Driver Card with ID and Call Button */}
-                    <div className="tdc-driver-box">
-                      <div className="tdc-driver-avatar">
-                        <User size={15} />
-                      </div>
-                      <div className="tdc-driver-meta">
-                        <div className="tdc-driver-name">{truck.driver?.name}</div>
-                        <div className="tdc-driver-sub">ID: {truck.driver?.empId || truck.driver?.id} · {truck.driver?.phone}</div>
-                      </div>
-                      <a 
-                        href={`tel:${truck.driver?.phone}`} 
-                        className="tdc-call-btn" 
-                        title={`Call Driver ${truck.driver?.name}`}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <Phone size={13} />
-                      </a>
+                  {/* Vehicle Identity */}
+                  <div className="fvc-identity">
+                    <div className="fvc-name-row">
+                      <span className="fvc-color-dot" style={{ background: truck.color }} />
+                      <span className="fvc-vehicle-name">{truck.vehicleName}</span>
+                      <span className="fvc-zone-tag">{truck.zone}</span>
                     </div>
-
-                    {/* Telemetry Box: Speed, Target, Stops Done */}
-                    <div className="tdc-telemetry-box">
-                      <div className="tdc-telem-row">
-                        <span className="tdc-telem-label"><Gauge size={12} /> Live Speed</span>
-                        <span className="tdc-telem-val">{truck.speed || (isCollecting ? '26 km/h' : '0 km/h (Standby)')}</span>
-                      </div>
-                      <div className="tdc-telem-row">
-                        <span className="tdc-telem-label"><Navigation size={12} /> Target Stop</span>
-                        <span className="tdc-telem-val" title={truck.stops[truck.currentStopIdx]?.bin_name || 'Depot Hub'}>
-                          {truck.currentStopIdx >= 0 && truck.stops[truck.currentStopIdx]
-                            ? truck.stops[truck.currentStopIdx]?.bin_name
-                            : (truck.stops[0]?.bin_name || 'Central Depot')}
-                        </span>
-                      </div>
-                      <div className="tdc-telem-row">
-                        <span className="tdc-telem-label"><Activity size={12} /> Serviced Bins</span>
-                        <span className="tdc-telem-val">{truck.stopsCompleted?.length || 0} / {truck.totalStops || 10} stops</span>
-                      </div>
-
-                      {/* Waste Capacity Loaded Bar */}
-                      <div className="tdc-capacity-wrap">
-                        <div className="tdc-capacity-labels">
-                          <span>Payload Loaded</span>
-                          <span>{truck.wasteCollected || 0}L / {truck.capacityLiters || 10000}L ({progressPct}%)</span>
-                        </div>
-                        <div className="tdc-capacity-track">
-                          <div 
-                            className="tdc-capacity-bar" 
-                            style={{ 
-                              width: `${progressPct}%`,
-                              background: truck.color 
-                            }}
-                          />
-                        </div>
-                      </div>
+                    <div className="fvc-model">
+                      <Truck size={12} />
+                      <span>{truck.model}</span>
                     </div>
+                  </div>
 
-                    {/* A* Route Badge */}
+                  {/* Driver */}
+                  <div className="fvc-driver-row">
+                    <div className="fvc-driver-avatar">
+                      <User size={13} />
+                    </div>
+                    <div className="fvc-driver-info">
+                      <span className="fvc-driver-name">{truck.driver?.name}</span>
+                      <span className="fvc-driver-sub">ID: {truck.driver?.empId || truck.driver?.id}</span>
+                    </div>
+                    <a 
+                      href={`tel:${truck.driver?.phone}`} 
+                      className="fvc-call-btn"
+                      title={`Call ${truck.driver?.name}`}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Phone size={12} />
+                    </a>
+                  </div>
+
+                  {/* Telemetry Row */}
+                  <div className="fvc-telemetry-row">
+                    <div className="fvc-telem-item">
+                      <span className="fvc-telem-label">Speed</span>
+                      <span className="fvc-telem-val">{isCollecting ? truck.speed?.split(' ')[0] || '26 km/h' : '0 km/h'}</span>
+                    </div>
+                    <div className="fvc-telem-divider" />
+                    <div className="fvc-telem-item">
+                      <span className="fvc-telem-label">Stops</span>
+                      <span className="fvc-telem-val">{truck.stopsCompleted?.length || 0}<span style={{ fontWeight: 400, opacity: 0.6 }}>/{truck.totalStops}</span></span>
+                    </div>
+                    <div className="fvc-telem-divider" />
+                    <div className="fvc-telem-item">
+                      <span className="fvc-telem-label">Loaded</span>
+                      <span className="fvc-telem-val" style={{ color: truck.color }}>{truck.wasteCollected || 0}L</span>
+                    </div>
+                  </div>
+
+                  {/* Current destination */}
+                  {!truck.done && truck.currentStopIdx >= 0 && truck.stops[truck.currentStopIdx] && (
+                    <div className="fvc-current-stop">
+                      <MapPin size={11} />
+                      <span>{truck.stops[truck.currentStopIdx].bin_name}</span>
+                    </div>
+                  )}
+
+                  {/* Progress bars */}
+                  <div className="fvc-progress-section">
+                    <div className="fvc-progress-label">
+                      <span>Route Progress</span>
+                      <span>{stopProgress}%</span>
+                    </div>
+                    <div className="fvc-progress-track">
+                      <div 
+                        className="fvc-progress-fill"
+                        style={{ 
+                          width: `${stopProgress}%`,
+                          background: truck.done ? '#10b981' : truck.color,
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* A* badge + view dossier */}
+                  <div className="fvc-footer">
                     {truck.astarMetrics && (
-                      <div className="tdc-astar-strip">
-                        <Sparkles size={11} />
-                        <span>A* Path: {truck.astarMetrics.totalDistance || 12.5}km · {truck.astarMetrics.nodesExplored || 10} nodes</span>
+                      <div className="fvc-astar-badge">
+                        <Sparkles size={10} />
+                        <span>A* · {truck.astarMetrics.totalDistance || 12.5}km</span>
                       </div>
                     )}
-
-                    {/* Open Full Dossier Button */}
                     <button 
-                      className="tdc-view-dossier-btn"
+                      className="fvc-dossier-btn"
                       onClick={(e) => {
                         e.stopPropagation();
                         setSelectedTruck(truck);
                       }}
-                      title="Open full vehicle specs, driver credentials, and telemetry modal"
                     >
-                      <Activity size={13} />
-                      <span>View Comprehensive Dossier</span>
+                      <span>Full Dossier</span>
+                      <ChevronRight size={12} />
                     </button>
                   </div>
-                );
-              })}
-            </div>
-          </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 

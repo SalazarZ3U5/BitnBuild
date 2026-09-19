@@ -44,7 +44,7 @@ AHMEDABAD_LANDMARK_BINS = [
         "name": "LD College of Engineering (Central Big Bin)",
         "zone": "West Zone (Navrangpura)",
         "lat": 23.0338, "lng": 72.5467,
-        "capacity_liters": 1200, "waste_type": WasteType.OTHER
+        "capacity_liters": 2400, "waste_type": WasteType.OTHER
     },
     {
         "name": "Mithakhali Six Roads",
@@ -320,21 +320,24 @@ def generate_fill_readings(db: Session, bins: list[Bin], days: int = 60):
     readings_batch = []
 
     for idx, bin_obj in enumerate(bins):
+        is_ldce = "ld college" in bin_obj.name.lower()
         fill = random.uniform(0, 10)  # Start fill
-        daily_rate = random.uniform(2, 8)  # % per day rise
-        hourly_rate = daily_rate / 24.0
-        # Random collection interval (every 3-7 days)
-        collection_interval_hours = random.randint(3, 7) * 24
-        hours_since_collection = 0
-
-        # Define target final fill band for realistic demonstration:
-        # ~20% of bins critical (82-96%), ~35% warning (52-78%), ~45% normal (15-48%)
-        if idx < 8:
-            target_final_fill = random.uniform(82, 96)
-        elif idx < 22:
-            target_final_fill = random.uniform(52, 78)
+        if is_ldce:
+            daily_rate = random.uniform(42, 60)  # Municipal peak generation rate
+            collection_interval_hours = 36       # Emptied frequently due to huge volume
+            target_final_fill = random.uniform(96, 99.5)
         else:
-            target_final_fill = random.uniform(15, 48)
+            daily_rate = random.uniform(2, 8)  # % per day rise
+            collection_interval_hours = random.randint(3, 7) * 24
+            if idx < 8:
+                target_final_fill = random.uniform(82, 96)
+            elif idx < 22:
+                target_final_fill = random.uniform(52, 78)
+            else:
+                target_final_fill = random.uniform(15, 48)
+
+        hourly_rate = daily_rate / 24.0
+        hours_since_collection = 0
 
         current_time = start
         while current_time <= now:
@@ -353,7 +356,8 @@ def generate_fill_readings(db: Session, bins: list[Bin], days: int = 60):
                 if hours_since_collection >= collection_interval_hours and fill > 50:
                     fill = random.uniform(0, 10)
                     hours_since_collection = 0
-                    collection_interval_hours = random.randint(3, 7) * 24
+                    if not is_ldce:
+                        collection_interval_hours = random.randint(3, 7) * 24
 
             readings_batch.append(FillReading(
                 bin_id=bin_obj.id,
@@ -411,9 +415,20 @@ def generate_vehicles(db: Session) -> list[Vehicle]:
 
 
 def generate_initial_alerts(db: Session, bins: list[Bin]):
-    """Create alerts for bins that are currently above 85% fill."""
+    """Create alerts for bins, with a permanent high-priority Special Alert for LD College."""
     for bin_obj in bins:
-        if bin_obj.current_fill_percent > 85:
+        is_ldce = "ld college" in bin_obj.name.lower()
+        if is_ldce:
+            alert = Alert(
+                bin_id=bin_obj.id,
+                zone=bin_obj.zone,
+                alert_type="special_producer",
+                message=f"🚨 [SPECIAL ALERT · #1 WASTE PRODUCER] LD College of Engineering is Ahmedabad's highest volume waste generator ({bin_obj.current_fill_percent:.0f}% fill of 2,400L capacity). Dedicated compactor priority required!",
+                severity="critical",
+                is_active=True,
+            )
+            db.add(alert)
+        elif bin_obj.current_fill_percent > 85:
             alert = Alert(
                 bin_id=bin_obj.id,
                 zone=bin_obj.zone,

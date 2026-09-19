@@ -14,7 +14,8 @@ import {
   MapPin,
   Truck,
   ExternalLink,
-  ChevronRight
+  ChevronRight,
+  Crown
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
@@ -104,9 +105,9 @@ export default function NotificationsPage() {
     }
   };
 
-  // Filtered list
+  // Filtered list with LDCE / special alerts pinned to top
   const filteredAlerts = useMemo(() => {
-    return alerts.filter(a => {
+    const list = alerts.filter(a => {
       const isResolved = !a.is_active || resolvedIds.has(a.id);
       if (filter === 'resolved') return isResolved;
       if (isResolved) return false;
@@ -115,6 +116,14 @@ export default function NotificationsPage() {
       if (filter === 'warning') return a.severity === 'warning';
       if (filter === 'anomaly') return a.alert_type !== 'threshold';
       return true; // 'all'
+    });
+
+    return list.sort((a, b) => {
+      const isSpecialA = a.alert_type === 'special_producer' || (a.message && a.message.toLowerCase().includes('ld college'));
+      const isSpecialB = b.alert_type === 'special_producer' || (b.message && b.message.toLowerCase().includes('ld college'));
+      if (isSpecialA && !isSpecialB) return -1;
+      if (!isSpecialA && isSpecialB) return 1;
+      return 0;
     });
   }, [alerts, filter, resolvedIds]);
 
@@ -321,18 +330,21 @@ export default function NotificationsPage() {
           ) : (
             <div className="notifications-list">
               {filteredAlerts.map(alert => {
+                const isSpecial = alert.alert_type === 'special_producer' || (alert.message && alert.message.toLowerCase().includes('ld college'));
                 const isCritical = alert.severity === 'critical';
                 const isResolved = !alert.is_active || resolvedIds.has(alert.id);
-                const isAnomaly = alert.alert_type !== 'threshold';
+                const isAnomaly = alert.alert_type !== 'threshold' && !isSpecial;
 
                 return (
                   <div 
                     key={alert.id} 
-                    className={`notification-item ${isCritical ? 'notif-critical' : isAnomaly ? 'notif-anomaly' : 'notif-warning'} ${isResolved ? 'notif-resolved' : ''}`}
+                    className={`notification-item ${isSpecial ? 'notif-special-producer notif-critical' : isCritical ? 'notif-critical' : isAnomaly ? 'notif-anomaly' : 'notif-warning'} ${isResolved ? 'notif-resolved' : ''}`}
                   >
                     <div className="notif-icon-col">
                       {isResolved ? (
                         <div className="notif-icon-bubble bubble-resolved"><Check size={16} /></div>
+                      ) : isSpecial ? (
+                        <div className="notif-icon-bubble bubble-special" style={{ background: '#fef3c7', color: '#b45309', border: '1px solid #f59e0b' }}><Crown size={16} /></div>
                       ) : isAnomaly ? (
                         <div className="notif-icon-bubble bubble-anomaly"><Zap size={16} /></div>
                       ) : isCritical ? (
@@ -344,6 +356,11 @@ export default function NotificationsPage() {
 
                     <div className="notif-content-col">
                       <div className="notif-top-row">
+                        {isSpecial && (
+                          <span className="notif-severity-pill" style={{ background: '#f59e0b', color: '#ffffff', fontWeight: 800 }}>
+                            👑 TOP PRODUCER
+                          </span>
+                        )}
                         <span className={`notif-severity-pill ${alert.severity}`}>
                           {alert.severity.toUpperCase()}
                         </span>
@@ -354,7 +371,7 @@ export default function NotificationsPage() {
                         </span>
                       </div>
 
-                      <div className="notif-message-text">
+                      <div className="notif-message-text" style={{ fontWeight: isSpecial ? 700 : 500 }}>
                         {alert.message}
                       </div>
 
