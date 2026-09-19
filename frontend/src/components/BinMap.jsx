@@ -172,7 +172,7 @@ function HeatmapLayer({ heatmapData, hoursAhead = 0 }) {
 }
 
 
-function TruckMarker({ truck }) {
+function TruckMarker({ truck, onSelectTruck }) {
   const label = truck.plateNumber || truck.vehicleName.split(' ').pop();
   const icon = useMemo(() => L.divIcon({
     className: 'truck-marker-icon',
@@ -249,13 +249,26 @@ function TruckMarker({ truck }) {
               {truck.stopsCompleted.length}/{truck.totalStops} stops
             </span>
           </div>
+
+          {onSelectTruck && (
+            <button 
+              className="btn btn-primary"
+              style={{ marginTop: '10px', width: '100%', padding: '6px 12px', fontSize: '0.78rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onSelectTruck(truck);
+              }}
+            >
+              <span>Inspect Full Truck Dossier</span>
+            </button>
+          )}
         </div>
       </Popup>
     </Marker>
   );
 }
 
-function BinMap({ bins, routes, truckStates = [], collectionActive, totalWasteCollected = 0, heatmapData = [], heatmapMode = false, heatmapHoursAhead = 0 }) {
+function BinMap({ bins, routes, truckStates = [], collectionActive, totalWasteCollected = 0, heatmapData = [], heatmapMode = false, heatmapHoursAhead = 0, onSelectTruck }) {
   const center = [23.0225, 72.5714];
 
   // Derive collected bin names from all trucks
@@ -464,7 +477,7 @@ function BinMap({ bins, routes, truckStates = [], collectionActive, totalWasteCo
 
         {/* Multiple Animated Truck Markers */}
         {truckStates.map((truck, idx) => (
-          <TruckMarker key={`truck-${idx}`} truck={truck} />
+          <TruckMarker key={`truck-${idx}`} truck={truck} onSelectTruck={onSelectTruck} />
         ))}
       </MapContainer>
 

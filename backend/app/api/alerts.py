@@ -1,7 +1,7 @@
 """
 Alerts API router.
 """
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 from pydantic import BaseModel
@@ -43,3 +43,24 @@ def trigger_anomaly_detection(db: Session = Depends(get_db)):
     """Run anomaly detection and threshold checks, creating new alerts."""
     new_alerts = run_anomaly_detection(db)
     return {"new_alerts": len(new_alerts), "alerts": new_alerts}
+
+
+@router.patch("/alerts/{alert_id}/resolve", response_model=AlertOut)
+def resolve_alert(alert_id: int, db: Session = Depends(get_db)):
+    """Mark an individual alert as resolved."""
+    alert = db.query(Alert).filter(Alert.id == alert_id).first()
+    if not alert:
+        raise HTTPException(status_code=404, detail="Alert not found")
+    alert.is_active = False
+    db.commit()
+    db.refresh(alert)
+    return alert
+
+
+@router.post("/alerts/resolve-all")
+def resolve_all_alerts(db: Session = Depends(get_db)):
+    """Mark all currently active alerts as resolved."""
+    updated_count = db.query(Alert).filter(Alert.is_active == True).update({Alert.is_active: False})
+    db.commit()
+    return {"resolved_count": updated_count, "status": "ok"}
+

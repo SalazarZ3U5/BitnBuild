@@ -23,12 +23,16 @@ import {
   Phone,
   User,
   Navigation,
-  Fuel
+  Fuel,
+  Clock,
+  TrendingUp,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import api from '../api';
 import BinMap from '../components/BinMap';
 import StatsCharts from '../components/StatsCharts';
-import HeatmapSlider from '../components/HeatmapSlider';
+import TruckDetailModal from '../components/TruckDetailModal';
 import { aStarOptimizeStops } from '../utils/astar';
 import { AMC_FLEET, getFleetVehicleMeta } from '../data/fleetData';
 
@@ -42,12 +46,14 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [routeLoading, setRouteLoading] = useState(false);
   const [lastRefreshed, setLastRefreshed] = useState(new Date());
+  const [selectedTruck, setSelectedTruck] = useState(null);
 
   // Simulation controls state
   const [simRunning, setSimRunning] = useState(false);
   const [simStep, setSimStep] = useState(0);
   const [simLoading, setSimLoading] = useState(false);
   const [simMessage, setSimMessage] = useState(null);
+  const [simBoardExpanded, setSimBoardExpanded] = useState(true);
 
   // All-critical + multi-truck collection state
   const [allCritical, setAllCritical] = useState(false);
@@ -628,7 +634,13 @@ function Dashboard() {
           {/* Per-Truck Widget Cards */}
           <div className="truck-widgets-grid">
             {truckStates.map((truck, idx) => (
-              <div key={idx} className={`truck-widget ${truck.done ? 'truck-done' : 'truck-active'}`}>
+              <div 
+                key={idx} 
+                className={`truck-widget ${truck.done ? 'truck-done' : 'truck-active'}`}
+                onClick={() => setSelectedTruck(truck)}
+                style={{ cursor: 'pointer' }}
+                title="Click to view comprehensive truck dossier"
+              >
                 <div className="truck-widget-header">
                   <div className="truck-widget-name-row">
                     <span className="truck-color-dot" style={{ background: truck.color }}></span>
@@ -738,97 +750,6 @@ function Dashboard() {
         </div>
       )}
 
-      {/* Sim Control Deck */}
-      <div className="sim-control-deck">
-        <div className="sim-deck-left">
-          <div className="sim-indicator">
-            <span className={`sim-pulse-dot ${simRunning ? 'running' : allCritical ? 'critical' : 'idle'}`}></span>
-            <div className="sim-status-meta">
-              <div className="sim-status-header">
-                <span className="sim-status-title">
-                   {collectionActive ? `Fleet Dispatched — ${activeTrucks} Trucks Active` : 
-                    allCritical ? '⚠ All Bins Critical — Paused' :
-                    simRunning ? 'Live Stream Active' : 'Simulation Ready'}
-                </span>
-                <span className="sim-step-badge">Step #{simStep}</span>
-              </div>
-              <span className="sim-status-subtitle">
-                {collectionActive ? `A* optimized collection — ${totalStopsDone}/${totalPlannedStops || 40} stops completed` :
-                 allCritical ? 'Auto-paused: all bins ≥80% capacity' :
-                 simRunning ? 'Looping +1h step every 3s' : 'Simulation idle (tick on demand)'}
-              </span>
-            </div>
-          </div>
-          
-          <div className="sim-primary-actions">
-            <button 
-              className={`sim-btn ${simRunning ? 'sim-btn-pause' : 'sim-btn-play'}`}
-              onClick={toggleSimulation}
-              disabled={simLoading || collectionActive}
-              title={simRunning ? "Pause automated stream" : "Start automated stream"}
-            >
-              {simRunning ? <Pause size={14} /> : <Play size={14} />}
-              <span>{simRunning ? 'Pause Stream' : 'Start Sim'}</span>
-            </button>
-
-            <button 
-              className="sim-btn sim-btn-step"
-              onClick={handleManualTick}
-              disabled={simLoading || collectionActive}
-              title="Advance telemetry by +1 hour"
-            >
-              <SkipForward size={14} />
-              <span>Step +1h</span>
-            </button>
-
-            <button 
-              className="sim-btn sim-btn-reset-main"
-              onClick={handleResetSimulation}
-              disabled={simLoading}
-              title="Reset entire simulation and all 40 bins to nominal state"
-            >
-              <RotateCcw size={14} />
-              <span>Reset Sim</span>
-            </button>
-          </div>
-        </div>
-
-        <div className="sim-deck-right">
-          <div className="sim-anomaly-wrapper">
-            <span className="sim-scenarios-label">Simulate Anomaly:</span>
-            <div className="sim-anomaly-group">
-              <button className="sim-btn sim-anomaly-btn anomaly-surge"
-                onClick={() => handleInjectAnomaly('SCENARIO_RAPID_SPIKE', 'Manek Chowk Surge (94.5%)')}
-                disabled={simLoading || collectionActive}>
-                <Zap size={13} /><span>Manek Chowk Surge</span>
-              </button>
-              <button className="sim-btn sim-anomaly-btn anomaly-tilt"
-                onClick={() => handleInjectAnomaly('SCENARIO_HIGH_TILT_VANDALISM', 'Riverfront Tilt (47.5°)')}
-                disabled={simLoading || collectionActive}>
-                <AlertTriangle size={13} /><span>Riverfront Tilt</span>
-              </button>
-              <button className="sim-btn sim-anomaly-btn anomaly-fire"
-                onClick={() => handleInjectAnomaly('SCENARIO_THERMAL_ANOMALY', 'Law Garden Heat (64.2°C)')}
-                disabled={simLoading || collectionActive}>
-                <Flame size={13} /><span>Thermal Risk</span>
-              </button>
-              <button className="sim-btn sim-btn-reset"
-                onClick={handleResetSimulation}
-                disabled={simLoading}>
-                <RotateCcw size={13} /><span>Reset Fleet</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {simMessage && (
-        <div className="sim-toast-banner">
-          <Sparkles size={14} className="sim-toast-icon" />
-          <span>{simMessage}</span>
-        </div>
-      )}
-
       {/* Stats Metric Cards */}
       <div className="stats-grid">
         <div className="stat-card stat-total">
@@ -898,7 +819,7 @@ function Dashboard() {
           </div>
         </div>
 
-        <div className="stat-card stat-routes stat-clickable" onClick={() => navigate('/fleet')} title="Open Fleet Tracker">
+        <div className="stat-card stat-routes stat-clickable" onClick={() => navigate('/fleet')} title="Open Dedicated Fleet Tracker">
           <div className="stat-top">
             <span className="stat-tag tag-dispatch">Fleet Control</span>
             <div className="stat-icon-wrapper icon-routes"><Truck size={18} /></div>
@@ -915,142 +836,162 @@ function Dashboard() {
         </div>
       </div>
 
-      {/* ── AMC Municipal Fleet Telemetry & Truck-Wise Live Tracking Section ── */}
-      <div className="fleet-tracking-dashboard-section" style={{ marginBottom: '24px' }}>
-        <div className="card">
-          <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-            <div className="card-header-titles">
-              <div className="card-badge badge-blue">AMC Municipal Fleet Telemetry</div>
-              <h3>Live Vehicle Tracking &amp; Driver Command</h3>
+      {/* ── Dedicated Simulation Board / Card ── */}
+      <div className="card simulation-board-card">
+        <div className="card-header sim-card-header">
+          <div className="card-header-titles">
+            <div className="card-badge badge-blue">
+              <Activity size={12} style={{ display: 'inline', marginRight: '4px' }} />
+              IoT Sensor Stream &amp; Simulation Engine
             </div>
-            <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-              <span className={`pill-counter ${collectionActive ? 'pill-success' : ''}`}>
-                {collectionActive ? `🚛 ${activeTrucks} Trucks Moving Live` : '4 Vehicles on Standby / Depot'}
-              </span>
-              <button 
-                className="btn btn-primary" 
-                onClick={collectionActive ? undefined : (routes.length === 0 ? generateRoutes : startCollection)}
-                disabled={collectionActive || routeLoading}
-                style={{ padding: '8px 16px', fontSize: '0.85rem' }}
-              >
-                <Truck size={15} />
-                <span>{collectionActive ? 'Fleet In Transit' : 'Dispatch All 4 Trucks'}</span>
-              </button>
-              <button 
-                className="btn btn-secondary" 
-                onClick={() => navigate('/fleet')}
-                style={{ padding: '8px 14px', fontSize: '0.85rem' }}
-              >
-                <ExternalLink size={14} />
-                <span>Dedicated Fleet View</span>
-              </button>
-            </div>
+            <h3>Smart City Real-Time Sensor Stream &amp; Stress Testing Board</h3>
           </div>
-          <div className="card-body">
-            <div className="truck-grid-detailed">
-              {truckStates.map((truck, idx) => {
-                const isCollecting = collectionActive && !truck.done;
-                const progressPct = Math.min(100, Math.round(((truck.wasteCollected || 0) / (truck.capacityLiters || 10000)) * 100));
-                
-                return (
-                  <div 
-                    key={idx} 
-                    className={`truck-detail-card status-${truck.done ? 'done' : isCollecting ? 'active' : 'ready'}`}
-                  >
-                    {/* Top Bar: Plate Number & Live Status */}
-                    <div className="tdc-top-bar">
-                      <div className="tdc-plate-badge" title="AMC Municipal Vehicle Registration">
-                        <span className="plate-ind">IND</span>
-                        <span>{truck.plateNumber}</span>
-                      </div>
-                      <div className={`tdc-status-pill ${truck.done ? 'done' : isCollecting ? 'active' : 'ready'}`}>
-                        {isCollecting && <span className="live-ping-dot" />}
-                        <span>{truck.done ? 'Service Complete' : isCollecting ? 'En Route' : 'Ready at Depot'}</span>
-                      </div>
-                    </div>
-
-                    {/* Vehicle Name, Color Marker & Model */}
-                    <div className="tdc-vehicle-info">
-                      <div className="tdc-name-row">
-                        <span className="tdc-color-marker" style={{ background: truck.color }}></span>
-                        <span className="tdc-vehicle-name">{truck.vehicleName}</span>
-                        <span className="tdc-zone-tag">{truck.zone}</span>
-                      </div>
-                      <div className="tdc-model-name">
-                        <Truck size={13} />
-                        <span>{truck.model}</span>
-                      </div>
-                    </div>
-
-                    {/* Driver Card with ID and Call Button */}
-                    <div className="tdc-driver-box">
-                      <div className="tdc-driver-avatar">
-                        <User size={15} />
-                      </div>
-                      <div className="tdc-driver-meta">
-                        <div className="tdc-driver-name">{truck.driver?.name}</div>
-                        <div className="tdc-driver-sub">ID: {truck.driver?.id} · {truck.driver?.phone}</div>
-                      </div>
-                      <a 
-                        href={`tel:${truck.driver?.phone}`} 
-                        className="tdc-call-btn" 
-                        title={`Call Driver ${truck.driver?.name}`}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <Phone size={13} />
-                      </a>
-                    </div>
-
-                    {/* Telemetry Box: Speed, Target, Stops Done */}
-                    <div className="tdc-telemetry-box">
-                      <div className="tdc-telem-row">
-                        <span className="tdc-telem-label"><Gauge size={12} /> Live Speed</span>
-                        <span className="tdc-telem-val">{truck.speed || (isCollecting ? '26 km/h' : '0 km/h (Standby)')}</span>
-                      </div>
-                      <div className="tdc-telem-row">
-                        <span className="tdc-telem-label"><Navigation size={12} /> Target Stop</span>
-                        <span className="tdc-telem-val" title={truck.stops[truck.currentStopIdx]?.bin_name || 'Depot Hub'}>
-                          {truck.currentStopIdx >= 0 && truck.stops[truck.currentStopIdx]
-                            ? truck.stops[truck.currentStopIdx]?.bin_name
-                            : (truck.stops[0]?.bin_name || 'Central Depot')}
-                        </span>
-                      </div>
-                      <div className="tdc-telem-row">
-                        <span className="tdc-telem-label"><Activity size={12} /> Serviced Bins</span>
-                        <span className="tdc-telem-val">{truck.stopsCompleted?.length || 0} / {truck.totalStops || 10} stops</span>
-                      </div>
-
-                      {/* Waste Capacity Loaded Bar */}
-                      <div className="tdc-capacity-wrap">
-                        <div className="tdc-capacity-labels">
-                          <span>Waste Payload</span>
-                          <span>{truck.wasteCollected || 0}L / {truck.capacityLiters || 10000}L ({progressPct}%)</span>
-                        </div>
-                        <div className="tdc-capacity-track">
-                          <div 
-                            className="tdc-capacity-bar" 
-                            style={{ 
-                              width: `${progressPct}%`,
-                              background: truck.color 
-                            }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* A* Strip */}
-                    {truck.astarMetrics && (
-                      <div className="tdc-astar-strip">
-                        <Sparkles size={11} />
-                        <span>A* Path: {truck.astarMetrics.totalDistance || 12.5}km · {truck.astarMetrics.nodesExplored || 10} nodes</span>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <div className="sim-header-status-pill">
+              <span className={`sim-pulse-dot ${simRunning ? 'running' : allCritical ? 'critical' : 'idle'}`}></span>
+              <span className="sim-status-text">
+                {collectionActive ? `Fleet Dispatched (${activeTrucks} active)` : 
+                 allCritical ? '⚠ All Bins Critical (>80%) — Paused' :
+                 simRunning ? 'Live Stream Active (+1h step every 2s)' : 'Simulation Standby (Manual Tick)'}
+              </span>
+              <span className="sim-step-badge">Step #{simStep}</span>
             </div>
+            <button 
+              className="btn btn-secondary"
+              onClick={() => setSimBoardExpanded(!simBoardExpanded)}
+              style={{ padding: '6px 12px', fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+              title={simBoardExpanded ? "Collapse simulation board" : "Expand simulation board"}
+            >
+              {simBoardExpanded ? (
+                <><ChevronUp size={14} /><span>Collapse</span></>
+              ) : (
+                <><ChevronDown size={14} /><span>Expand Board</span></>
+              )}
+            </button>
           </div>
         </div>
+
+        {simBoardExpanded && (
+          <div className="card-body sim-board-body">
+            {/* Left Column: Stream Engine Controls */}
+            <div className="sim-board-stream-section">
+              <div className="sim-section-header">
+                <span className="sim-section-title">Telemetry Playback Engine</span>
+                <span className="sim-section-desc">Advance or stream automated municipal sensor fill events across Ahmedabad</span>
+              </div>
+              <div className="sim-stream-actions">
+                <button 
+                  className={`sim-btn sim-btn-lg ${simRunning ? 'sim-btn-pause' : 'sim-btn-play'}`}
+                  onClick={toggleSimulation}
+                  disabled={simLoading || collectionActive}
+                  title={simRunning ? "Pause automated stream" : "Start automated stream"}
+                >
+                  {simRunning ? <Pause size={15} /> : <Play size={15} />}
+                  <span>{simRunning ? 'Pause Stream' : 'Start Live Stream'}</span>
+                </button>
+
+                <button 
+                  className="sim-btn sim-btn-lg sim-btn-step"
+                  onClick={handleManualTick}
+                  disabled={simLoading || collectionActive}
+                  title="Advance telemetry by +1 hour"
+                >
+                  <SkipForward size={15} />
+                  <span>Advance +1 Hour</span>
+                </button>
+
+                <button 
+                  className="sim-btn sim-btn-lg sim-btn-reset-main"
+                  onClick={handleResetSimulation}
+                  disabled={simLoading}
+                  title="Reset entire simulation and all 40 bins to nominal state (<40%)"
+                >
+                  <RotateCcw size={15} />
+                  <span>Reset All Sensors</span>
+                </button>
+              </div>
+
+              <div className="sim-stats-strip">
+                <div className="sim-stat-chip">
+                  <Clock size={13} />
+                  <span>Playback: <strong>+1h / 2.0s tick</strong></span>
+                </div>
+                <div className="sim-stat-chip">
+                  <Activity size={13} />
+                  <span>Fill Evolution: <strong>+5% to 11% / tick</strong></span>
+                </div>
+                <div className="sim-stat-chip">
+                  <Truck size={13} />
+                  <span>Auto-Dispatch: <strong>Threshold ≥80%</strong></span>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: Stress Testing Scenarios */}
+            <div className="sim-board-anomaly-section">
+              <div className="sim-section-header">
+                <span className="sim-section-title">Municipal Stress Tests &amp; Anomaly Injection</span>
+                <span className="sim-section-desc">Inject live sensor events to test emergency protocols &amp; A* fleet rerouting</span>
+              </div>
+              <div className="sim-anomaly-grid">
+                <button 
+                  className="sim-anomaly-card anomaly-surge"
+                  onClick={() => handleInjectAnomaly('SCENARIO_RAPID_SPIKE', 'Manek Chowk Surge (94.5%)')}
+                  disabled={simLoading || collectionActive}
+                >
+                  <div className="anomaly-icon-wrap surge"><Zap size={16} /></div>
+                  <div className="anomaly-meta">
+                    <span className="anomaly-name">Manek Chowk Surge</span>
+                    <span className="anomaly-desc">Night market crowd spike (94.5% fill)</span>
+                  </div>
+                </button>
+
+                <button 
+                  className="sim-anomaly-card anomaly-tilt"
+                  onClick={() => handleInjectAnomaly('SCENARIO_HIGH_TILT_VANDALISM', 'Riverfront Tilt (47.5°)')}
+                  disabled={simLoading || collectionActive}
+                >
+                  <div className="anomaly-icon-wrap tilt"><AlertTriangle size={16} /></div>
+                  <div className="anomaly-meta">
+                    <span className="anomaly-name">Riverfront Tilt</span>
+                    <span className="anomaly-desc">47.5° structural tilt or vandalism</span>
+                  </div>
+                </button>
+
+                <button 
+                  className="sim-anomaly-card anomaly-fire"
+                  onClick={() => handleInjectAnomaly('SCENARIO_THERMAL_ANOMALY', 'Law Garden Heat (64.2°C)')}
+                  disabled={simLoading || collectionActive}
+                >
+                  <div className="anomaly-icon-wrap fire"><Flame size={16} /></div>
+                  <div className="anomaly-meta">
+                    <span className="anomaly-name">Thermal Hazard</span>
+                    <span className="anomaly-desc">64.2°C heat anomaly at Law Garden</span>
+                  </div>
+                </button>
+
+                <button 
+                  className="sim-anomaly-card anomaly-citywide"
+                  onClick={handleManualTick}
+                  disabled={simLoading || collectionActive}
+                >
+                  <div className="anomaly-icon-wrap citywide"><TrendingUp size={16} /></div>
+                  <div className="anomaly-meta">
+                    <span className="anomaly-name">Step Citywide Telemetry</span>
+                    <span className="anomaly-desc">Evolve all 40 sensors toward critical</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {simBoardExpanded && simMessage && (
+          <div className="sim-board-toast">
+            <Sparkles size={14} />
+            <span>{simMessage}</span>
+          </div>
+        )}
       </div>
 
       {/* ── Expansive Large Municipal Map Section ── */}
@@ -1085,19 +1026,33 @@ function Dashboard() {
               heatmapData={heatmapData}
               heatmapMode={heatmapMode}
               heatmapHoursAhead={heatmapHoursAhead}
+              onSelectTruck={setSelectedTruck}
             />
           </div>
         </div>
       </div>
 
-      {/* ── Predictive Fill Forecast — full width below map ── */}
-      <div className="predictive-below-map">
-        <HeatmapSlider
-          onHeatmapData={handleHeatmapData}
-          onHeatmapModeChange={setHeatmapMode}
-          heatmapMode={heatmapMode}
-          onRoutesPlanned={handleRoutesPlanned}
-        />
+      {/* ── AI Forecast Spotlight Card (linking to dedicated /forecast page) ── */}
+      <div className="forecast-teaser-card">
+        <div className="forecast-teaser-left">
+          <div className="forecast-teaser-icon">
+            <TrendingUp size={24} />
+          </div>
+          <div className="forecast-teaser-info">
+            <h4>AI Fill Level Forecast &amp; Predictive Route Dispatch</h4>
+            <p>
+              Neural &amp; linear time-horizon drift projections (1h to 72h) across all 40 AMC smart bins. Anticipate overflows and generate proactive CVRP collection routes before emergency thresholds are breached.
+            </p>
+          </div>
+        </div>
+        <button 
+          className="forecast-teaser-action" 
+          onClick={() => navigate('/forecast')}
+          title="Open Dedicated AI Forecast Page"
+        >
+          <span>Open AI Forecast Studio</span>
+          <ChevronRight size={16} />
+        </button>
       </div>
 
       {/* ── Fleet Analytics Full Width Section ── */}
@@ -1115,6 +1070,14 @@ function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* ── Comprehensive Truck Information Popup Modal ── */}
+      {selectedTruck && (
+        <TruckDetailModal 
+          truck={selectedTruck} 
+          onClose={() => setSelectedTruck(null)} 
+        />
+      )}
     </div>
   );
 }

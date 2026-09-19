@@ -35,8 +35,8 @@ export default function NotificationsPage() {
 
   const fetchAlerts = useCallback(async () => {
     try {
-      const res = await api.get('/alerts');
-      setAlerts(res.data);
+      const res = await api.get('/alerts?active_only=false');
+      setAlerts(res.data || []);
     } catch (err) {
       console.error('Failed to fetch alerts:', err);
     } finally {
@@ -55,18 +55,39 @@ export default function NotificationsPage() {
     setResolvedIds(prev => new Set(prev).add(alertId));
     try {
       await api.patch(`/alerts/${alertId}/resolve`);
-      showToast('Incident marked as resolved.');
+      showToast('Incident marked as resolved in AMC database.');
+      fetchAlerts();
     } catch {
-      // Local optimistic update
       showToast('Incident resolved locally.');
     }
   };
 
   // Handle Mark All Resolved
   const handleMarkAllResolved = async () => {
-    const activeAlerts = alerts.filter(a => a.is_active && !resolvedIds.has(a.id));
-    setResolvedIds(new Set(alerts.map(a => a.id)));
-    showToast(`All ${activeAlerts.length} notifications marked as resolved.`);
+    try {
+      await api.post('/alerts/resolve-all');
+      showToast('All active notifications marked as resolved.');
+      fetchAlerts();
+    } catch {
+      setResolvedIds(new Set(alerts.map(a => a.id)));
+      showToast('All notifications marked as resolved locally.');
+    }
+  };
+
+  // Run full anomaly detection scan
+  const handleRunDetection = async () => {
+    setLoading(true);
+    showToast('Running isolation forest anomaly detection scan across 40 AMC bins...');
+    try {
+      const res = await api.post('/alerts/detect');
+      showToast(`Scan complete: ${res.data.new_alerts} new alert(s) detected.`);
+      fetchAlerts();
+    } catch (err) {
+      console.error('Failed to run detection:', err);
+      showToast('Anomaly detection failed. Ensure backend is running.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Anomaly Injection
@@ -101,6 +122,7 @@ export default function NotificationsPage() {
   const warningCount = alerts.filter(a => a.severity === 'warning' && a.is_active && !resolvedIds.has(a.id)).length;
   const anomalyCount = alerts.filter(a => a.alert_type !== 'threshold' && a.is_active && !resolvedIds.has(a.id)).length;
   const totalActive = alerts.filter(a => a.is_active && !resolvedIds.has(a.id)).length;
+  const resolvedCount = alerts.filter(a => !a.is_active || resolvedIds.has(a.id)).length;
 
   return (
     <div className="page-container notifications-page-layout">
@@ -120,6 +142,15 @@ export default function NotificationsPage() {
         </div>
 
         <div className="header-actions">
+          <button 
+            className="btn btn-primary" 
+            onClick={handleRunDetection} 
+            disabled={loading}
+            title="Scan all 40 bins for overflows & sensor anomalies"
+          >
+            <Zap size={14} />
+            <span>Run Anomaly Scan</span>
+          </button>
           <button 
             className="btn btn-secondary" 
             onClick={handleMarkAllResolved} 
@@ -270,7 +301,7 @@ export default function NotificationsPage() {
               className={`filter-tab ${filter === 'resolved' ? 'active' : ''}`}
               onClick={() => setFilter('resolved')}
             >
-              Resolved ({resolvedIds.size})
+              Resolved ({resolvedCount})
             </button>
           </div>
         </div>
