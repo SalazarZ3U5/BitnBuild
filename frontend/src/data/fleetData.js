@@ -12,7 +12,7 @@ export const AMC_FLEET = [
     model: 'Tata Ultra 1918.T Hydraulic Compactor',
     capacityLiters: 5000,
     fuelType: 'CNG Green Fleet',
-    zone: 'West Zone (Navrangpura & LDCE)',
+    zone: 'West Zone (Navrangpura)',
     depotName: 'Ashram Road Central Depot',
     depotCoords: [23.0345, 72.5564],
     color: '#2563eb',

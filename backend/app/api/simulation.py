@@ -75,11 +75,11 @@ async def perform_simulation_step():
         active_alerts = {(a.bin_id, a.severity): a for a in db.query(Alert).filter(Alert.is_active == True).all()}
 
         for b in bins:
-            is_ldce = "ld college" in b.name.lower()
-            if is_ldce:
-                # Municipal peak waste producer: always rises fastest and stays at city maximum
-                delta = random.uniform(14.0, 22.0)
-                new_fill = min(100.0, max(94.0, b.current_fill_percent + delta))
+            is_top = "manek chowk" in b.name.lower()
+            if is_top:
+                # Municipal peak waste producer: rises rapidly and stays elevated
+                delta = random.uniform(12.0, 18.0)
+                new_fill = min(100.0, max(92.0, b.current_fill_percent + delta))
             else:
                 # Dynamic simulation rise: between 5.0% and 11.0% per step
                 delta = random.uniform(5.0, 11.0)
@@ -94,13 +94,13 @@ async def perform_simulation_step():
             ))
 
             # Threshold & special alerts
-            if is_ldce:
+            if is_top:
                 if (b.id, "special_producer") not in active_alerts:
                     alert = Alert(
                         bin_id=b.id,
                         zone=b.zone,
                         alert_type="special_producer",
-                        message=f"🚨 [SPECIAL ALERT · #1 WASTE PRODUCER] LD College of Engineering peak volume ({b.current_fill_percent:.0f}% of 2,400L) — Urgent dedicated compactor priority required!",
+                        message=f"🚨 [SPECIAL ALERT · #1 WASTE PRODUCER] Manek Chowk Food & Night Bazaar peak volume ({b.current_fill_percent:.0f}%) — Urgent dedicated compactor priority required!",
                         severity="critical",
                         is_active=True,
                     )
@@ -219,19 +219,19 @@ async def fill_all_critical(db: Session = Depends(get_db)):
     bins = db.query(Bin).all()
     now = datetime.datetime.now(datetime.timezone.utc)
     for b in bins:
-        is_ldce = "ld college" in b.name.lower()
-        if is_ldce:
+        is_top = "manek chowk" in b.name.lower()
+        if is_top:
             b.current_fill_percent = 99.8
         else:
             b.current_fill_percent = round(random.uniform(86.0, 97.5), 1)
         db.add(FillReading(bin_id=b.id, timestamp=now, fill_percent=b.current_fill_percent))
 
-        if is_ldce:
+        if is_top:
             db.add(Alert(
                 bin_id=b.id,
                 zone=b.zone,
                 alert_type="special_producer",
-                message=f"🚨 [SPECIAL ALERT · #1 WASTE PRODUCER] LD College of Engineering at peak capacity (100% of 2,400L) — Urgent compactor dispatch required!",
+                message=f"🚨 [SPECIAL ALERT · #1 WASTE PRODUCER] Manek Chowk at peak capacity (100%) — Urgent compactor dispatch required!",
                 severity="critical",
                 is_active=True,
             ))
@@ -414,9 +414,9 @@ async def reset_simulation(db: Session = Depends(get_db)):
     sync_accurate_landmark_bins(db)
     bins = db.query(Bin).all()
     for b in bins:
-        is_ldce = "ld college" in b.name.lower()
-        if is_ldce:
-            b.current_fill_percent = round(random.uniform(94.0, 98.5), 1)
+        is_top = "manek chowk" in b.name.lower()
+        if is_top:
+            b.current_fill_percent = round(random.uniform(92.0, 96.5), 1)
         else:
             b.current_fill_percent = round(random.uniform(18.0, 38.0), 1)
         db.add(FillReading(
@@ -428,14 +428,14 @@ async def reset_simulation(db: Session = Depends(get_db)):
     # Deactivate active alerts
     db.query(Alert).filter(Alert.is_active == True).update({"is_active": False})
 
-    # Restore special alert for LD College of Engineering (Ahmedabad's #1 waste producer)
+    # Restore special alert for Ahmedabad's #1 waste producer (Manek Chowk)
     for b in bins:
-        if "ld college" in b.name.lower():
+        if "manek chowk" in b.name.lower():
             db.add(Alert(
                 bin_id=b.id,
                 zone=b.zone,
                 alert_type="special_producer",
-                message=f"🚨 [SPECIAL ALERT · #1 WASTE PRODUCER] LD College of Engineering is Ahmedabad's highest volume waste generator ({b.current_fill_percent:.0f}% of 2,400L capacity). High-capacity compactor allocated!",
+                message=f"🚨 [SPECIAL ALERT · #1 WASTE PRODUCER] Manek Chowk Food & Night Bazaar is Ahmedabad's highest volume waste generator ({b.current_fill_percent:.0f}% fill). High-capacity compactor allocated!",
                 severity="critical",
                 is_active=True,
             ))

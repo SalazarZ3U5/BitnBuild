@@ -49,9 +49,9 @@ function Dashboard() {
   const [lastRefreshed, setLastRefreshed] = useState(new Date());
   const [selectedTruck, setSelectedTruck] = useState(null);
 
-  // Special LDCE Alert
-  const specialLdceAlert = useMemo(() => {
-    return alerts.find(a => a.is_active && (a.alert_type === 'special_producer' || (a.message && a.message.toLowerCase().includes('ld college'))));
+  // Special Top Producer Alert
+  const specialTopAlert = useMemo(() => {
+    return alerts.find(a => a.is_active && (a.alert_type === 'special_producer' || (a.message && a.message.toLowerCase().includes('#1 waste producer'))));
   }, [alerts]);
 
   // Simulation controls state
@@ -735,8 +735,8 @@ function Dashboard() {
         )}
       </div>
 
-      {/* ── Special Alert: LD College of Engineering (#1 Municipal Producer) ── */}
-      {specialLdceAlert && (
+      {/* ── Special Alert: Municipal #1 Waste Hotspot ── */}
+      {specialTopAlert && (
         <div className="analytics-special-alert-banner" style={{ marginBottom: '24px' }}>
           <div className="asab-left">
             <div className="asab-icon-pod">
@@ -745,12 +745,11 @@ function Dashboard() {
             <div className="asab-text">
               <div className="asab-header-row">
                 <span className="asab-badge">👑 MUNICIPAL #1 PRODUCER SPECIAL ALERT</span>
-                <span className="asab-zone-pill">West Zone (Navrangpura)</span>
-                <span className="asab-capacity-pill">2,400L Mega Dumpster</span>
+                <span className="asab-zone-pill">{specialTopAlert.zone || 'Central Zone (Khadia)'}</span>
               </div>
-              <h3 className="asab-title">LD College of Engineering Critical Waste Priority</h3>
+              <h3 className="asab-title">Municipal #1 Waste Producer Critical Priority</h3>
               <p className="asab-desc">
-                {specialLdceAlert.message}
+                {specialTopAlert.message}
               </p>
             </div>
           </div>
@@ -1075,7 +1074,7 @@ function Dashboard() {
           <div className="card-header">
             <div className="card-header-titles">
               <div className="card-badge">AMC Municipal Geospatial Grid</div>
-              <h3>Ahmedabad Smart Bin Network — 40 Bins &amp; LDCE Mega Dumpster</h3>
+              <h3>Ahmedabad Smart Bin Network — 40 Real-Time Municipal Bins</h3>
             </div>
             <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
               <button className="btn btn-secondary" onClick={() => navigate('/fleet')}>

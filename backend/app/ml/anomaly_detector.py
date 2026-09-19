@@ -19,24 +19,24 @@ def run_anomaly_detection(db: Session) -> list[dict]:
     """
     new_alerts = []
 
-    # ── 0. Special Alert for LD College of Engineering (#1 Municipal Producer) ──
-    ldce_bin = db.query(Bin).filter(Bin.name.ilike("%ld college%")).first()
-    if ldce_bin:
-        ldce_alert = (
+    # ── 0. Special Alert for #1 Municipal Producer (Manek Chowk) ──
+    top_bin = db.query(Bin).filter(Bin.name.ilike("%manek chowk%")).first()
+    if top_bin:
+        top_alert = (
             db.query(Alert)
             .filter(
-                Alert.bin_id == ldce_bin.id,
+                Alert.bin_id == top_bin.id,
                 Alert.alert_type == "special_producer",
                 Alert.is_active == True,
             )
             .first()
         )
-        if not ldce_alert:
+        if not top_alert:
             alert = Alert(
-                bin_id=ldce_bin.id,
-                zone=ldce_bin.zone,
+                bin_id=top_bin.id,
+                zone=top_bin.zone,
                 alert_type="special_producer",
-                message=f"🚨 [SPECIAL ALERT · #1 WASTE PRODUCER] LD College of Engineering is Ahmedabad's highest volume waste generator ({ldce_bin.current_fill_percent:.0f}% fill of 2,400L capacity). High-capacity compactor allocated!",
+                message=f"🚨 [SPECIAL ALERT · #1 WASTE PRODUCER] Manek Chowk Food & Night Bazaar is Ahmedabad's highest volume waste generator ({top_bin.current_fill_percent:.0f}% fill). High-capacity compactor allocated!",
                 severity="critical",
                 is_active=True,
             )
@@ -44,8 +44,8 @@ def run_anomaly_detection(db: Session) -> list[dict]:
             db.flush()
             new_alerts.append({
                 "id": alert.id,
-                "bin_id": ldce_bin.id,
-                "zone": ldce_bin.zone,
+                "bin_id": top_bin.id,
+                "zone": top_bin.zone,
                 "alert_type": "special_producer",
                 "message": alert.message,
                 "severity": alert.severity,

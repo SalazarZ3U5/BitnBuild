@@ -40,10 +40,10 @@ function getBinMarkerIcon(bin, fillPercent, wasCollected, isBeingCollected, isBi
         <div class="big-bin-container ${isBeingCollected ? 'collecting-anim' : ''}">
           <div class="big-bin-halo" style="border-color: ${color}"></div>
           <div class="big-bin-core" style="background: ${color}">
-            <span class="big-bin-symbol">🏢</span>
+            <span class="big-bin-symbol">${bin?.name?.toLowerCase().includes('manek chowk') ? '👑' : '🏢'}</span>
             <span class="big-bin-pct">${wasCollected ? '✓' : roundedFill + '%'}</span>
           </div>
-          <div class="big-bin-pill-tag">👑 LDCE 2400L #1</div>
+          <div class="big-bin-pill-tag">${bin?.name?.toLowerCase().includes('manek chowk') ? '👑 #1 Hotspot' : 'Hub Bin'}</div>
         </div>
       `,
       iconSize: [64, 64],
@@ -337,7 +337,7 @@ function BinMap({ bins, routes, truckStates = [], collectionActive, totalWasteCo
           maxZoom={19}
         />
 
-        {/* High-visibility Smart Bin Markers with dedicated Big Bin treatment for LDCE */}
+        {/* High-visibility Smart Bin Markers */}
         {bins.map(bin => {
           if (!bin || typeof bin.lat !== 'number' || typeof bin.lng !== 'number' || isNaN(bin.lat) || isNaN(bin.lng)) return null;
 
@@ -347,7 +347,7 @@ function BinMap({ bins, routes, truckStates = [], collectionActive, totalWasteCo
           const color = wasCollected ? '#10b981' : getFillColor(fillPercent);
           const isBigBin = Boolean(
             (bin.capacity_liters && bin.capacity_liters >= 1000) ||
-            (bin.name && (bin.name.toLowerCase().includes('ld college') || bin.name.toLowerCase().includes('big bin')))
+            (bin.name && (bin.name.toLowerCase().includes('manek chowk') || bin.name.toLowerCase().includes('big bin')))
           );
 
           const isHotspot = hotspotBinIds.has(bin.id);

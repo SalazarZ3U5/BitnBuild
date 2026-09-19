@@ -41,10 +41,10 @@ AHMEDABAD_LANDMARK_BINS = [
         "capacity_liters": 240, "waste_type": WasteType.PAPER
     },
     {
-        "name": "LD College of Engineering (Central Big Bin)",
+        "name": "LD College of Engineering (Campus)",
         "zone": "West Zone (Navrangpura)",
         "lat": 23.0338, "lng": 72.5467,
-        "capacity_liters": 2400, "waste_type": WasteType.OTHER
+        "capacity_liters": 480, "waste_type": WasteType.OTHER
     },
     {
         "name": "Mithakhali Six Roads",
@@ -320,21 +320,49 @@ def generate_fill_readings(db: Session, bins: list[Bin], days: int = 60):
     readings_batch = []
 
     for idx, bin_obj in enumerate(bins):
-        is_ldce = "ld college" in bin_obj.name.lower()
         fill = random.uniform(0, 10)  # Start fill
-        if is_ldce:
-            daily_rate = random.uniform(42, 60)  # Municipal peak generation rate
-            collection_interval_hours = 36       # Emptied frequently due to huge volume
-            target_final_fill = random.uniform(96, 99.5)
+        name_lower = bin_obj.name.lower()
+
+        # Authentic Ahmedabad waste hierarchy: Wholesale markets & transit lead, LDCE at rank 7-8
+        if "manek chowk" in name_lower:
+            daily_rate = random.uniform(50.0, 56.0)  # #1 Ahmedabad Waste Hotspot (Street Food & Night Bazaar)
+            collection_interval_hours = 30
+            target_final_fill = random.uniform(92.0, 97.0)
+        elif "kalupur" in name_lower:
+            daily_rate = random.uniform(44.0, 48.0)  # #2 Major Transit & Wholesale Vegetable Market
+            collection_interval_hours = 36
+            target_final_fill = random.uniform(88.0, 94.0)
+        elif "apmc" in name_lower:
+            daily_rate = random.uniform(39.0, 43.0)  # #3 Agricultural Produce Market Committee
+            collection_interval_hours = 42
+            target_final_fill = random.uniform(84.0, 91.0)
+        elif "gita mandir" in name_lower:
+            daily_rate = random.uniform(34.0, 38.0)  # #4 Central Bus Terminal (100k+ passengers)
+            collection_interval_hours = 48
+            target_final_fill = random.uniform(80.0, 87.0)
+        elif "alpha one" in name_lower:
+            daily_rate = random.uniform(29.0, 33.0)  # #5 Vastrapur Mega Mall & Food Court
+            collection_interval_hours = 48
+            target_final_fill = random.uniform(76.0, 83.0)
+        elif "bapunagar industrial" in name_lower:
+            daily_rate = random.uniform(24.0, 28.0)  # #6 Dense Manufacturing & Textile Estate
+            collection_interval_hours = 54
+            target_final_fill = random.uniform(70.0, 78.0)
+        elif "c.g. road swastik" in name_lower:
+            daily_rate = random.uniform(22.0, 25.0)  # #7 Commercial Shopping Corridor
+            collection_interval_hours = 60
+            target_final_fill = random.uniform(65.0, 72.0)
+        elif "ld college" in name_lower:
+            daily_rate = random.uniform(18.5, 21.0)  # #8 Educational Campus, Hostels & Canteen (~20%/day)
+            collection_interval_hours = 72
+            target_final_fill = random.uniform(58.0, 66.0)
         else:
-            daily_rate = random.uniform(2, 8)  # % per day rise
+            daily_rate = random.uniform(3.0, 14.0)  # Ranks 9-40
             collection_interval_hours = random.randint(3, 7) * 24
-            if idx < 8:
-                target_final_fill = random.uniform(82, 96)
-            elif idx < 22:
-                target_final_fill = random.uniform(52, 78)
+            if idx < 16:
+                target_final_fill = random.uniform(45.0, 60.0)
             else:
-                target_final_fill = random.uniform(15, 48)
+                target_final_fill = random.uniform(15.0, 45.0)
 
         hourly_rate = daily_rate / 24.0
         hours_since_collection = 0
@@ -356,8 +384,6 @@ def generate_fill_readings(db: Session, bins: list[Bin], days: int = 60):
                 if hours_since_collection >= collection_interval_hours and fill > 50:
                     fill = random.uniform(0, 10)
                     hours_since_collection = 0
-                    if not is_ldce:
-                        collection_interval_hours = random.randint(3, 7) * 24
 
             readings_batch.append(FillReading(
                 bin_id=bin_obj.id,
@@ -415,15 +441,15 @@ def generate_vehicles(db: Session) -> list[Vehicle]:
 
 
 def generate_initial_alerts(db: Session, bins: list[Bin]):
-    """Create alerts for bins, with a permanent high-priority Special Alert for LD College."""
+    """Create alerts for bins, with a high-priority Special Alert for Ahmedabad's #1 generator (Manek Chowk)."""
     for bin_obj in bins:
-        is_ldce = "ld college" in bin_obj.name.lower()
-        if is_ldce:
+        is_top = "manek chowk" in bin_obj.name.lower()
+        if is_top:
             alert = Alert(
                 bin_id=bin_obj.id,
                 zone=bin_obj.zone,
                 alert_type="special_producer",
-                message=f"🚨 [SPECIAL ALERT · #1 WASTE PRODUCER] LD College of Engineering is Ahmedabad's highest volume waste generator ({bin_obj.current_fill_percent:.0f}% fill of 2,400L capacity). Dedicated compactor priority required!",
+                message=f"🚨 [SPECIAL ALERT · #1 WASTE PRODUCER] Manek Chowk Food & Night Bazaar is Ahmedabad's highest volume waste generator ({bin_obj.current_fill_percent:.0f}% fill). High-capacity compactor allocated!",
                 severity="critical",
                 is_active=True,
             )

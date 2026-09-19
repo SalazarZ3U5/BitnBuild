@@ -149,17 +149,12 @@ def get_hotspots(top_n: int = 8, db: Session = Depends(get_db)):
 
         wt = b.waste_type.value if isinstance(b.waste_type, WasteType) else b.waste_type
 
-        is_ldce = "ld college" in (b.name or "").lower()
-
-        # Heat tier classification — LD College is always critical #1 top producer
-        if is_ldce:
+        # Heat tier classification
+        if avg_rate >= 35:
             tier = "critical"
-            avg_rate = max(avg_rate, 48.5)
-        elif avg_rate >= 15:
-            tier = "critical"
-        elif avg_rate >= 8:
+        elif avg_rate >= 20:
             tier = "high"
-        elif avg_rate >= 3:
+        elif avg_rate >= 10:
             tier = "moderate"
         else:
             tier = "low"
@@ -175,12 +170,15 @@ def get_hotspots(top_n: int = 8, db: Session = Depends(get_db)):
             "current_fill_percent": round(b.current_fill_percent or 0, 1),
             "avg_daily_fill_rate": round(avg_rate, 2),
             "heat_tier": tier,
-            "is_top_producer": is_ldce,
-            "special_alert": is_ldce,
+            "is_top_producer": False,
+            "special_alert": False,
         })
 
-    # Sort descending by fill rate with LD College always pinned at #1
-    bin_fill_rates.sort(key=lambda x: (1 if x["is_top_producer"] else 0, x["avg_daily_fill_rate"]), reverse=True)
+    # Sort descending by fill rate
+    bin_fill_rates.sort(key=lambda x: x["avg_daily_fill_rate"], reverse=True)
+    if bin_fill_rates:
+        bin_fill_rates[0]["is_top_producer"] = True
+        bin_fill_rates[0]["special_alert"] = True
     hotspots = bin_fill_rates[:top_n]
 
     return {

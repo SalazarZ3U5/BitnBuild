@@ -13,17 +13,17 @@ function AlertsPanel({ alerts }) {
     );
   }
 
-  // Pin LD College / special producer alerts to the very top
+  // Pin #1 waste producer / special producer alerts to the very top
   const sortedAlerts = [...alerts].sort((a, b) => {
-    const isSpecialA = a.alert_type === 'special_producer' || (a.message && a.message.toLowerCase().includes('ld college'));
-    const isSpecialB = b.alert_type === 'special_producer' || (b.message && b.message.toLowerCase().includes('ld college'));
+    const isSpecialA = a.alert_type === 'special_producer' || (a.message && a.message.toLowerCase().includes('#1 waste producer'));
+    const isSpecialB = b.alert_type === 'special_producer' || (b.message && b.message.toLowerCase().includes('#1 waste producer'));
     if (isSpecialA && !isSpecialB) return -1;
     if (!isSpecialA && isSpecialB) return 1;
     return 0;
   });
 
   const renderIcon = (alert) => {
-    const isSpecial = alert.alert_type === 'special_producer' || (alert.message && alert.message.toLowerCase().includes('ld college'));
+    const isSpecial = alert.alert_type === 'special_producer' || (alert.message && alert.message.toLowerCase().includes('#1 waste producer'));
     if (isSpecial) {
       return <Crown size={18} className="text-special-gold" />;
     }
@@ -40,7 +40,7 @@ function AlertsPanel({ alerts }) {
   return (
     <div className="alerts-list-modern">
       {sortedAlerts.map(alert => {
-        const isSpecial = alert.alert_type === 'special_producer' || (alert.message && alert.message.toLowerCase().includes('ld college'));
+        const isSpecial = alert.alert_type === 'special_producer' || (alert.message && alert.message.toLowerCase().includes('#1 waste producer'));
 
         return (
           <div 

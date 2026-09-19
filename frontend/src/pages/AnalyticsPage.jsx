@@ -82,6 +82,8 @@ function AnalyticsPage() {
     ? Math.round((totals.recyclable_liters / totals.total_liters) * 100)
     : 0;
 
+  const topHotspot = hotspots.length > 0 ? hotspots[0] : null;
+
   return (
     <div className="page-container">
       {/* Editorial Page Header */}
@@ -330,29 +332,31 @@ function AnalyticsPage() {
         </div>
       </div>
 
-      {/* Special Alert Banner: LD College of Engineering (#1 Municipal Producer) */}
-      <div className="analytics-special-alert-banner">
-        <div className="asab-left">
-          <div className="asab-icon-pod">
-            <Crown size={22} className="asab-crown-icon" />
-          </div>
-          <div className="asab-text">
-            <div className="asab-header-row">
-              <span className="asab-badge">👑 MUNICIPAL MEGA-PRODUCER SPECIAL ALERT</span>
-              <span className="asab-zone-pill">West Zone (Navrangpura)</span>
-              <span className="asab-capacity-pill">2,400L Mega Dumpster</span>
+      {/* Special Alert Banner: Municipal #1 Waste Hotspot */}
+      {topHotspot && (
+        <div className="analytics-special-alert-banner">
+          <div className="asab-left">
+            <div className="asab-icon-pod">
+              <Crown size={22} className="asab-crown-icon" />
             </div>
-            <h3 className="asab-title">LD College of Engineering is Ahmedabad's #1 Waste Generator</h3>
-            <p className="asab-desc">
-              Central Big Bin telemetry indicates city-leading generation velocity (~48.5%/day, 1,164L/day). Priority automated compactor scheduling and continuous smart overflow monitoring active.
-            </p>
+            <div className="asab-text">
+              <div className="asab-header-row">
+                <span className="asab-badge">👑 MUNICIPAL MEGA-PRODUCER SPECIAL ALERT</span>
+                <span className="asab-zone-pill">{topHotspot.zone}</span>
+                <span className="asab-capacity-pill">{topHotspot.capacity_liters}L Capacity</span>
+              </div>
+              <h3 className="asab-title">{topHotspot.name} is Ahmedabad's #1 Waste Generator</h3>
+              <p className="asab-desc">
+                Municipal telemetry indicates city-leading generation velocity (~{topHotspot.avg_daily_fill_rate}%/day). Priority automated compactor scheduling and continuous smart overflow monitoring active.
+              </p>
+            </div>
+          </div>
+          <div className="asab-stat-badge">
+            <span className="asab-stat-label">Generation Velocity</span>
+            <span className="asab-stat-value">Top #1 in AMC</span>
           </div>
         </div>
-        <div className="asab-stat-badge">
-          <span className="asab-stat-label">Generation Velocity</span>
-          <span className="asab-stat-value">Top #1 in AMC</span>
-        </div>
-      </div>
+      )}
 
       {/* Row 3: Top Waste Generation Hotspot Leaderboard */}
       {hotspots.length > 0 && (
@@ -377,7 +381,8 @@ function AnalyticsPage() {
                   <span>Heat Tier</span>
                 </div>
                 {hotspots.map((h, idx) => {
-                  const isLdce = idx === 0 || h.is_top_producer || (h.name && h.name.toLowerCase().includes('ld college'));
+                  const isTop = idx === 0 || h.is_top_producer;
+                  const isLdce = h.name && h.name.toLowerCase().includes('ld college');
                   const tierConfig = {
                     critical: { label: 'Critical', color: '#f43f5e', bg: '#fff1f2' },
                     high:     { label: 'High',     color: '#f97316', bg: '#fff7ed' },
@@ -387,16 +392,21 @@ function AnalyticsPage() {
                   return (
                     <div 
                       key={h.bin_id} 
-                      className={`hotspot-table-row ${idx < 3 ? 'top-three' : ''} ${isLdce ? 'is-top-producer-row' : ''}`}
+                      className={`hotspot-table-row ${idx < 3 ? 'top-three' : ''} ${isTop ? 'is-top-producer-row' : ''}`}
                     >
                       <span className="hotspot-rank">
-                        {isLdce ? '👑' : idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`}
+                        {isTop ? '👑' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`}
                       </span>
                       <div className="hotspot-name-col">
                         <span className="hotspot-bin-name" title={h.name}>{h.name}</span>
-                        {isLdce && (
+                        {isTop && (
                           <span className="hotspot-ldce-tag">
-                            <Crown size={10} /> #1 City Producer (2,400L)
+                            <Crown size={10} /> #1 City Producer
+                          </span>
+                        )}
+                        {isLdce && (
+                          <span style={{ fontSize: '0.68rem', background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', padding: '1px 6px', borderRadius: '4px', marginLeft: '6px', fontWeight: 600 }}>
+                            🎓 Campus (Rank #{idx + 1})
                           </span>
                         )}
                       </div>

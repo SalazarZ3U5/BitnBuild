@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   Bell, 
   AlertTriangle, 
-  Flame, 
   Zap, 
   CheckCircle2, 
   RefreshCw, 
@@ -26,7 +25,6 @@ export default function NotificationsPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all'); // 'all' | 'critical' | 'warning' | 'anomaly'
   const [toastMsg, setToastMsg] = useState(null);
-  const [simLoading, setSimLoading] = useState(false);
   const [resolvedIds, setResolvedIds] = useState(new Set());
 
   const showToast = (msg) => {
@@ -91,21 +89,7 @@ export default function NotificationsPage() {
     }
   };
 
-  // Anomaly Injection
-  const handleInject = async (scenarioId, label) => {
-    setSimLoading(true);
-    try {
-      const res = await api.post('/simulation/inject-anomaly', { scenario_id: scenarioId });
-      showToast(`⚡ ${label} triggered for ${res.data.target_bin}!`);
-      await fetchAlerts();
-    } catch (err) {
-      console.error('Failed to trigger anomaly:', err);
-    } finally {
-      setSimLoading(false);
-    }
-  };
-
-  // Filtered list with LDCE / special alerts pinned to top
+  // Filtered list with #1 waste producer / special alerts pinned to top
   const filteredAlerts = useMemo(() => {
     const list = alerts.filter(a => {
       const isResolved = !a.is_active || resolvedIds.has(a.id);
@@ -119,8 +103,8 @@ export default function NotificationsPage() {
     });
 
     return list.sort((a, b) => {
-      const isSpecialA = a.alert_type === 'special_producer' || (a.message && a.message.toLowerCase().includes('ld college'));
-      const isSpecialB = b.alert_type === 'special_producer' || (b.message && b.message.toLowerCase().includes('ld college'));
+      const isSpecialA = a.alert_type === 'special_producer' || (a.message && a.message.toLowerCase().includes('#1 waste producer'));
+      const isSpecialB = b.alert_type === 'special_producer' || (b.message && b.message.toLowerCase().includes('#1 waste producer'));
       if (isSpecialA && !isSpecialB) return -1;
       if (!isSpecialA && isSpecialB) return 1;
       return 0;
@@ -244,39 +228,6 @@ export default function NotificationsPage() {
         </div>
       </div>
 
-      {/* Anomaly Simulation Injection Bar */}
-      <div className="notification-sim-strip">
-        <div className="n-sim-left">
-          <Zap size={15} className="n-sim-icon" />
-          <span>Simulate Sensor Event:</span>
-        </div>
-        <div className="n-sim-buttons">
-          <button 
-            className="sim-btn sim-anomaly-btn anomaly-surge"
-            onClick={() => handleInject('SCENARIO_RAPID_SPIKE', 'Manek Chowk Surge (94.5%)')}
-            disabled={simLoading}
-          >
-            <Zap size={12} />
-            <span>Manek Chowk Surge</span>
-          </button>
-          <button 
-            className="sim-btn sim-anomaly-btn anomaly-tilt"
-            onClick={() => handleInject('SCENARIO_HIGH_TILT_VANDALISM', 'Riverfront Tilt (47.5°)')}
-            disabled={simLoading}
-          >
-            <AlertTriangle size={12} />
-            <span>Riverfront Tilt</span>
-          </button>
-          <button 
-            className="sim-btn sim-anomaly-btn anomaly-fire"
-            onClick={() => handleInject('SCENARIO_THERMAL_ANOMALY', 'Law Garden Thermal (64.2°C)')}
-            disabled={simLoading}
-          >
-            <Flame size={12} />
-            <span>Thermal Anomaly</span>
-          </button>
-        </div>
-      </div>
 
       {/* Main Notification Center Card */}
       <div className="card notifications-feed-card">
@@ -330,7 +281,7 @@ export default function NotificationsPage() {
           ) : (
             <div className="notifications-list">
               {filteredAlerts.map(alert => {
-                const isSpecial = alert.alert_type === 'special_producer' || (alert.message && alert.message.toLowerCase().includes('ld college'));
+                const isSpecial = alert.alert_type === 'special_producer' || (alert.message && alert.message.toLowerCase().includes('#1 waste producer'));
                 const isCritical = alert.severity === 'critical';
                 const isResolved = !alert.is_active || resolvedIds.has(alert.id);
                 const isAnomaly = alert.alert_type !== 'threshold' && !isSpecial;
