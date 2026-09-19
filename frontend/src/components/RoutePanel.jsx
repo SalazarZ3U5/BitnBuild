@@ -53,20 +53,25 @@ function RoutePanel({ routes, loading }) {
             <div className="route-stops-timeline">
               {route.stops
                 .sort((a, b) => a.stop_order - b.stop_order)
-                .map((stop, sIdx) => (
-                  <div key={sIdx} className="route-stop-node">
-                    <div className="stop-index-bubble" style={{ borderColor: themeColor }}>
-                      {sIdx + 1}
+                .map((stop, sIdx) => {
+                  const fillVal = stop.fill_percent ?? stop.predicted_fill_percent ?? stop.current_fill_percent ?? 0;
+                  const displayFill = isNaN(fillVal) ? 0 : Math.round(fillVal);
+                  return (
+                    <div key={sIdx} className="route-stop-node">
+                      <div className="stop-index-bubble" style={{ borderColor: themeColor }}>
+                        {sIdx + 1}
+                      </div>
+                      <div className="stop-content">
+                        <span className="stop-bin-name">{stop.bin_name}</span>
+                        <span className={`stop-fill-pill ${getFillBadgeClass(displayFill)}`}>
+                          {displayFill}% Fill
+                        </span>
+                      </div>
                     </div>
-                    <div className="stop-content">
-                      <span className="stop-bin-name">{stop.bin_name}</span>
-                      <span className={`stop-fill-pill ${getFillBadgeClass(stop.fill_percent)}`}>
-                        {Math.round(stop.fill_percent)}% Fill
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
             </div>
+
           </div>
         );
       })}

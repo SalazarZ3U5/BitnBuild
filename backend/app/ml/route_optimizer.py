@@ -71,7 +71,11 @@ def optimize_routes(db: Session, fill_threshold: float = 50.0) -> dict:
     4. Post-verify: assign any remaining bins to the nearest route (0 bins disregarded).
     5. Store routes in DB and return all 4 paths.
     """
-    from ortools.constraint_solver import routing_enums_pb2, pywrapcp
+    try:
+        from ortools.constraint_solver import routing_enums_pb2, pywrapcp
+        HAS_ORTOOLS = True
+    except ImportError:
+        HAS_ORTOOLS = False
 
     # Check if all or most bins are critical
     all_db_bins = db.query(Bin).all()
@@ -109,6 +113,7 @@ def optimize_routes(db: Session, fill_threshold: float = 50.0) -> dict:
     if not vehicles:
         return {"message": "No active vehicles", "routes": []}
 
+
     num_vehicles = min(len(vehicles), 4)
     active_vehicles = vehicles[:num_vehicles]
 
@@ -129,6 +134,9 @@ def optimize_routes(db: Session, fill_threshold: float = 50.0) -> dict:
         waste_volume = int(b.capacity_liters * (b.current_fill_percent / 100.0))
         demands.append(max(waste_volume, 1))
 
+    if not HAS_ORTOOLS:
+        return _fallback_round_robin(db, bins, active_vehicles, matrix)
+
     total_demand = sum(demands)
     # Generous capacity per vehicle so OR-Tools never drops bins due to capacity constraints
     cap_per_vehicle = max(int(total_demand * 1.5), 25000)
@@ -138,6 +146,7 @@ def optimize_routes(db: Session, fill_threshold: float = 50.0) -> dict:
     n = len(locations)
     manager = pywrapcp.RoutingIndexManager(n, num_vehicles, 0)  # 0 = depot index
     routing = pywrapcp.RoutingModel(manager)
+
 
     # Distance callback
     def distance_callback(from_index, to_index):
@@ -334,5 +343,192 @@ def _fallback_round_robin(db, bins, vehicles, matrix):
     return {
         "message": f"Fallback routes: {len(routes_output)} routes",
         "total_bins": len(bins),
+        "routes": routes_output,
+    }
+
+
+def optimize_routes_predictive(db: Session, dispatch_at_hours: float = 12.0) -> dict:
+    """
+    Generate optimized routes based on PREDICTED fill levels at dispatch_at_hours from now.
+    Bins predicted to exceed 60% fill at that future time are included.
+    """
+    from app.ml.fill_predictor import predict_fill_at
+
+    all_bins = db.query(Bin).all()
+    vehicles = db.query(Vehicle).filter(Vehicle.is_active == True).order_by(Vehicle.id).all()
+
+    if not vehicles:
+        return {"message": "No active vehicles", "routes": []}
+
+    # Predict fill for all bins at dispatch time
+    predictions = []
+    for b in all_bins:
+        try:
+            pred = predict_fill_at(db, b, dispatch_at_hours)
+            pred["_bin_obj"] = b
+            predictions.append(pred)
+        except Exception:
+            # Fallback: use current fill
+            predictions.append({
+                "bin_id": b.id,
+                "predicted_fill_percent": b.current_fill_percent or 0.0,
+                "will_overflow_before": False,
+                "_bin_obj": b,
+            })
+
+    # Include bins predicted to be >= 60% full at dispatch time
+    threshold = 60.0
+    bins_to_collect = [p["_bin_obj"] for p in predictions if p.get("predicted_fill_percent", 0) >= threshold]
+
+    if not bins_to_collect:
+        # Fallback: top 20 bins by predicted fill
+        predictions.sort(key=lambda x: x.get("predicted_fill_percent", 0), reverse=True)
+        bins_to_collect = [p["_bin_obj"] for p in predictions[:20]]
+
+    # Build prediction lookup for demand calculation
+    pred_lookup = {p["bin_id"]: p.get("predicted_fill_percent", 0) for p in predictions}
+
+    num_vehicles = min(len(vehicles), 4)
+    active_vehicles = vehicles[:num_vehicles]
+    depot = active_vehicles[0]
+
+    locations = [(depot.depot_lat, depot.depot_lng)]
+    for b in bins_to_collect:
+        locations.append((b.lat, b.lng))
+
+    matrix = _try_osrm_distance_matrix(locations)
+    if matrix is None:
+        matrix = _build_distance_matrix_haversine(locations)
+
+    solution = None
+    manager = None
+    routing = None
+
+    try:
+        from ortools.constraint_solver import routing_enums_pb2, pywrapcp
+
+        # Demands: depot=0, each bin's predicted waste volume
+        demands = [0]
+        for b in bins_to_collect:
+            predicted_fill = pred_lookup.get(b.id, b.current_fill_percent or 0)
+            waste_volume = int(b.capacity_liters * (predicted_fill / 100.0))
+            demands.append(max(waste_volume, 1))
+
+        total_demand = sum(demands)
+        cap_per_vehicle = max(int(total_demand * 1.5), 25000)
+        vehicle_capacities = [cap_per_vehicle] * num_vehicles
+
+        n = len(locations)
+        manager = pywrapcp.RoutingIndexManager(n, num_vehicles, 0)
+        routing = pywrapcp.RoutingModel(manager)
+
+        def distance_callback(from_index, to_index):
+            return matrix[manager.IndexToNode(from_index)][manager.IndexToNode(to_index)]
+
+        tc = routing.RegisterTransitCallback(distance_callback)
+        routing.SetArcCostEvaluatorOfAllVehicles(tc)
+
+        def demand_callback(from_index):
+            return demands[manager.IndexToNode(from_index)]
+
+        dc = routing.RegisterUnaryTransitCallback(demand_callback)
+        routing.AddDimensionWithVehicleCapacity(dc, 0, vehicle_capacities, True, "Capacity")
+
+        max_stops = math.ceil(len(bins_to_collect) / num_vehicles) + 3
+        routing.AddConstantDimension(1, max_stops + 1, True, "StopCount")
+
+        search_params = pywrapcp.DefaultRoutingSearchParameters()
+        search_params.first_solution_strategy = routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC
+        search_params.local_search_metaheuristic = routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH
+        search_params.time_limit.FromSeconds(1)
+
+        solution = routing.SolveWithParameters(search_params)
+    except Exception:
+        solution = None
+
+    dispatch_at = datetime.datetime.utcnow() + datetime.timedelta(hours=dispatch_at_hours)
+
+    if not solution or manager is None or routing is None:
+        # Fallback: round-robin
+
+        routes_output = []
+        bins_per_v = max(1, len(bins_to_collect) // num_vehicles)
+        for v_idx, vehicle in enumerate(active_vehicles):
+            start = v_idx * bins_per_v
+            end = start + bins_per_v if v_idx < num_vehicles - 1 else len(bins_to_collect)
+            assigned = bins_to_collect[start:end]
+            stops = [{
+                "bin_id": b.id,
+                "bin_name": b.name,
+                "lat": b.lat,
+                "lng": b.lng,
+                "fill_percent": round(pred_lookup.get(b.id, b.current_fill_percent or 0), 2),
+                "current_fill_percent": b.current_fill_percent,
+                "predicted_fill_percent": round(pred_lookup.get(b.id, b.current_fill_percent or 0), 2),
+                "stop_order": i,
+            } for i, b in enumerate(assigned)]
+            total_dist = sum(
+                haversine_km(assigned[i-1].lat, assigned[i-1].lng, assigned[i].lat, assigned[i].lng)
+                for i in range(1, len(assigned))
+            ) if len(assigned) > 1 else 0
+            routes_output.append({
+                "vehicle_id": vehicle.id,
+                "vehicle_name": vehicle.name,
+                "depot": {"lat": vehicle.depot_lat, "lng": vehicle.depot_lng},
+                "total_distance_km": round(total_dist, 2),
+                "stops": stops,
+                "dispatch_at": dispatch_at.isoformat(),
+                "hours_ahead": dispatch_at_hours,
+                "is_predictive": True,
+            })
+        return {
+            "message": f"Predictive routes (fallback) for T+{dispatch_at_hours}h covering {len(bins_to_collect)} bins",
+            "total_bins": len(bins_to_collect),
+            "dispatch_at": dispatch_at.isoformat(),
+            "hours_ahead": dispatch_at_hours,
+            "routes": routes_output,
+        }
+
+    routes_output = []
+    for v_idx in range(num_vehicles):
+        index = routing.Start(v_idx)
+        stops = []
+        total_dist = 0
+        stop_order = 0
+        while not routing.IsEnd(index):
+            node = manager.IndexToNode(index)
+            next_index = solution.Value(routing.NextVar(index))
+            total_dist += matrix[node][manager.IndexToNode(next_index)]
+            if node > 0:
+                b = bins_to_collect[node - 1]
+                stops.append({
+                    "bin_id": b.id,
+                    "bin_name": b.name,
+                    "lat": b.lat,
+                    "lng": b.lng,
+                    "fill_percent": round(pred_lookup.get(b.id, b.current_fill_percent or 0), 2),
+                    "current_fill_percent": b.current_fill_percent,
+                    "predicted_fill_percent": round(pred_lookup.get(b.id, b.current_fill_percent or 0), 2),
+                    "stop_order": stop_order,
+                })
+                stop_order += 1
+            index = next_index
+        routes_output.append({
+            "vehicle_id": active_vehicles[v_idx].id,
+            "vehicle_name": active_vehicles[v_idx].name,
+            "depot": {"lat": active_vehicles[v_idx].depot_lat, "lng": active_vehicles[v_idx].depot_lng},
+            "total_distance_km": round(total_dist / 1000, 2),
+            "stops": stops,
+            "dispatch_at": dispatch_at.isoformat(),
+            "hours_ahead": dispatch_at_hours,
+            "is_predictive": True,
+        })
+
+
+    return {
+        "message": f"Predictive routes for T+{dispatch_at_hours}h covering {len(bins_to_collect)} bins predicted to need collection",
+        "total_bins": len(bins_to_collect),
+        "dispatch_at": dispatch_at.isoformat(),
+        "hours_ahead": dispatch_at_hours,
         "routes": routes_output,
     }

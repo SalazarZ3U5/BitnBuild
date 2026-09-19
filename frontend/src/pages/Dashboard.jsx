@@ -23,6 +23,7 @@ import BinMap from '../components/BinMap';
 import RoutePanel from '../components/RoutePanel';
 import AlertsPanel from '../components/AlertsPanel';
 import StatsCharts from '../components/StatsCharts';
+import HeatmapSlider from '../components/HeatmapSlider';
 import { aStarOptimizeStops } from '../utils/astar';
 
 const TRUCK_COLORS = ['#2563eb', '#8b5cf6', '#f59e0b', '#06b6d4'];
@@ -47,6 +48,12 @@ function Dashboard() {
   const [collectionComplete, setCollectionComplete] = useState(false);
   const [totalWasteCollected, setTotalWasteCollected] = useState(0);
   const [truckStates, setTruckStates] = useState([]);
+
+  // ── Heatmap + Predictive Routing state ─────────────────────────────────────
+  const [heatmapData, setHeatmapData] = useState([]);
+  const [heatmapMode, setHeatmapMode] = useState(false);
+  const [heatmapHoursAhead, setHeatmapHoursAhead] = useState(0);
+
 
   const hasAutoTriggered = useRef(false);
   const truckStatesRef = useRef([]);
@@ -388,7 +395,14 @@ function Dashboard() {
     }
   };
 
+  // ── Heatmap callbacks ─────────────────────────────────────────────────────
+  const handleHeatmapData = useCallback((points, hoursAhead) => {
+    setHeatmapData(points);
+    setHeatmapHoursAhead(hoursAhead);
+  }, []);
+
   // ── Computed stats ────────────────────────────────────────────────────────
+
   const totalBins = bins.length;
   const criticalBins = bins.filter(b => b.current_fill_percent > 80).length;
   const moderateBins = bins.filter(b => b.current_fill_percent >= 50 && b.current_fill_percent <= 80).length;
@@ -823,6 +837,8 @@ function Dashboard() {
         </div>
       </div>
 
+      {/* ── Predictive Intelligence Strip removed from here, now below map ── */}
+
       {/* Map + Routes Section */}
       <div className="dashboard-grid">
         <div className="card map-card">
@@ -840,12 +856,15 @@ function Dashboard() {
             </button>
           </div>
           <div className="card-body no-padding">
-            <BinMap 
-              bins={bins} 
-              routes={routes} 
+            <BinMap
+              bins={bins}
+              routes={routes}
               truckStates={truckStates}
               collectionActive={collectionActive}
               totalWasteCollected={totalWasteCollected}
+              heatmapData={heatmapData}
+              heatmapMode={heatmapMode}
+              heatmapHoursAhead={heatmapHoursAhead}
             />
           </div>
         </div>
@@ -866,6 +885,16 @@ function Dashboard() {
         </div>
       </div>
 
+      {/* ── Predictive Fill Forecast — full width below map ── */}
+      <div className="predictive-below-map">
+        <HeatmapSlider
+          onHeatmapData={handleHeatmapData}
+          onHeatmapModeChange={setHeatmapMode}
+          heatmapMode={heatmapMode}
+        />
+      </div>
+
+
       {/* Alerts + Charts Section */}
       <div className="dashboard-bottom">
         <div className="card alerts-card">
@@ -885,7 +914,7 @@ function Dashboard() {
           <div className="card-header">
             <div className="card-header-titles">
               <div className="card-badge badge-blue">Fleet Analytics</div>
-              <h3>Waste Composition & Levels</h3>
+              <h3>Waste Composition &amp; Levels</h3>
             </div>
           </div>
           <div className="card-body">

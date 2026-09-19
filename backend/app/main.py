@@ -12,6 +12,7 @@ backend_dir = str(Path(__file__).resolve().parent.parent)
 if backend_dir not in sys.path:
     sys.path.insert(0, backend_dir)
 
+from typing import Set
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -27,6 +28,7 @@ from app.api.routes import router as routes_router
 from app.api.alerts import router as alerts_router
 from app.api.analytics import router as analytics_router
 from app.api.simulation import router as simulation_router, set_broadcast_callback
+
 
 
 # ── WebSocket connection manager ─────────────────────────────────────────────
@@ -91,6 +93,7 @@ async def lifespan(app: FastAPI):
     broadcast_task.cancel()
 
 
+
 async def broadcast_bin_update():
     """Broadcasts bin status updates to connected WebSocket clients."""
     if manager.active_connections:
@@ -150,6 +153,7 @@ app.include_router(routes_router)
 app.include_router(alerts_router)
 app.include_router(analytics_router)
 app.include_router(simulation_router)
+
 
 
 @app.get("/")

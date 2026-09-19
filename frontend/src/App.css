@@ -1,8 +1,8 @@
-/* ══════════════════════════════════════════════════════════════════════════════
-   WASTEOPTIMIZER — MODERN EDITORIAL DESIGN SYSTEM
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   WASTEOPTIMIZER â€” MODERN EDITORIAL DESIGN SYSTEM
    Inspired by contemporary clean gallery aesthetics, high-contrast typography,
    and crisp architectural minimalism.
-   ══════════════════════════════════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
 :root {
   /* Surface & Canvas */
@@ -54,7 +54,7 @@
   --transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* ── Global Reset ───────────────────────────────────────────────────────────── */
+/* â”€â”€ Global Reset â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
@@ -69,13 +69,13 @@ body {
   letter-spacing: -0.011em;
 }
 
-/* ── App Shell ──────────────────────────────────────────────────────────────── */
+/* â”€â”€ App Shell â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .app {
   display: flex;
   min-height: 100vh;
 }
 
-/* ── Modern Architectural Sidebar ───────────────────────────────────────────── */
+/* â”€â”€ Modern Architectural Sidebar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .sidebar {
   width: var(--sidebar-width);
   background-color: #ffffff;
@@ -291,7 +291,7 @@ body {
   text-align: center;
 }
 
-/* ── Main Layout ────────────────────────────────────────────────────────────── */
+/* â”€â”€ Main Layout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .main-content {
   flex: 1;
   margin-left: var(--sidebar-width);
@@ -308,7 +308,7 @@ body {
   gap: 32px;
 }
 
-/* ── Editorial Header (Inspired by reference) ───────────────────────────────── */
+/* â”€â”€ Editorial Header (Inspired by reference) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .page-header-editorial {
   display: flex;
   justify-content: space-between;
@@ -392,7 +392,7 @@ body {
   color: var(--accent-cobalt);
 }
 
-/* ── Buttons ────────────────────────────────────────────────────────────────── */
+/* â”€â”€ Buttons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -467,7 +467,7 @@ body {
   to { transform: rotate(360deg); }
 }
 
-/* ── Metric Cards Grid (High Contrast Editorial Style) ──────────────────────── */
+/* â”€â”€ Metric Cards Grid (High Contrast Editorial Style) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -606,7 +606,7 @@ body {
   transition: width 0.5s ease;
 }
 
-/* ── Content Card Blocks ────────────────────────────────────────────────────── */
+/* â”€â”€ Content Card Blocks â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .dashboard-grid {
   display: grid;
   grid-template-columns: 2fr 1fr;
@@ -715,7 +715,7 @@ body {
   overflow-y: auto;
 }
 
-/* ── Map Container Styling ──────────────────────────────────────────────────── */
+/* â”€â”€ Map Container Styling â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .map-card {
   min-height: 500px;
   position: relative;
@@ -816,7 +816,7 @@ body {
   margin-top: 2px;
 }
 
-/* ── Route Panel ────────────────────────────────────────────────────────────── */
+/* â”€â”€ Route Panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .route-panel-modern {
   display: flex;
   flex-direction: column;
@@ -941,7 +941,7 @@ body {
   color: #047857;
 }
 
-/* ── Alerts Panel ───────────────────────────────────────────────────────────── */
+/* â”€â”€ Alerts Panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .alerts-list-modern {
   display: flex;
   flex-direction: column;
@@ -1038,7 +1038,7 @@ body {
   color: var(--accent-cobalt);
 }
 
-/* ── Stats Charts Wrapper ───────────────────────────────────────────────────── */
+/* â”€â”€ Stats Charts Wrapper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .stats-charts-wrapper {
   display: flex;
   flex-direction: column;
@@ -1057,7 +1057,7 @@ body {
   color: var(--ink-muted);
 }
 
-/* ── Empty States & Loaders ─────────────────────────────────────────────────── */
+/* â”€â”€ Empty States & Loaders â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .loading-container {
   display: flex;
   flex-direction: column;
@@ -1121,7 +1121,7 @@ body {
   max-width: 280px;
 }
 
-/* ── Classify Page Styling ──────────────────────────────────────────────────── */
+/* â”€â”€ Classify Page Styling â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .classify-layout-editorial {
   display: grid;
   grid-template-columns: 1fr 1.2fr;
@@ -1429,7 +1429,7 @@ body {
   background-color: var(--accent-cobalt);
 }
 
-/* ── Analytics Page Styling ─────────────────────────────────────────────────── */
+/* â”€â”€ Analytics Page Styling â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .totals-grid-editorial {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -1622,7 +1622,7 @@ body {
   line-height: 1.4;
 }
 
-/* ── Live Telemetry Replay & Anomaly Simulator Console ──────────────────────── */
+/* â”€â”€ Live Telemetry Replay & Anomaly Simulator Console â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .sim-control-deck {
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
@@ -1923,7 +1923,7 @@ body {
   }
 }
 
-/* ── Critical Dispatch Banner ──────────────────────────────────────────────── */
+/* â”€â”€ Critical Dispatch Banner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .critical-dispatch-banner {
   background: linear-gradient(135deg, #1e0a0e 0%, #3b0a1a 40%, #1a0c2e 100%);
   border: 1px solid rgba(244, 63, 94, 0.35);
@@ -2008,7 +2008,7 @@ body {
   cursor: not-allowed;
 }
 
-/* ── Collection Progress Banner ────────────────────────────────────────────── */
+/* â”€â”€ Collection Progress Banner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .collection-progress-banner {
   background: linear-gradient(135deg, #0c1a0e 0%, #0a2618 40%, #0a1a2e 100%);
   border: 1px solid rgba(16, 185, 129, 0.3);
@@ -2094,7 +2094,7 @@ body {
   background: rgba(255, 255, 255, 0.1);
 }
 
-/* ── Collection Complete Summary ───────────────────────────────────────────── */
+/* â”€â”€ Collection Complete Summary â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .collection-complete-banner {
   background: #ffffff;
   border: 2px solid rgba(16, 185, 129, 0.3);
@@ -2240,7 +2240,7 @@ body {
   border-radius: var(--radius-pill);
 }
 
-/* ── Truck Marker on Map ───────────────────────────────────────────────────── */
+/* â”€â”€ Truck Marker on Map â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .truck-marker-icon {
   background: none !important;
   border: none !important;
@@ -2306,7 +2306,7 @@ body {
   margin-top: 4px;
 }
 
-/* ── Map Collection Overlay Counter ────────────────────────────────────────── */
+/* â”€â”€ Map Collection Overlay Counter â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .map-collection-overlay {
   position: absolute;
   top: 16px;
@@ -2345,7 +2345,7 @@ body {
   letter-spacing: -0.03em;
 }
 
-/* ── Bin Collecting Pulse (CircleMarker class) ──────────────────────────────── */
+/* â”€â”€ Bin Collecting Pulse (CircleMarker class) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .bin-collecting-pulse {
   animation: binCollectPulse 1s ease-in-out infinite;
 }
@@ -2355,7 +2355,7 @@ body {
   50% { opacity: 0.5; }
 }
 
-/* ── Sim Pulse Dot — Critical State ────────────────────────────────────────── */
+/* â”€â”€ Sim Pulse Dot â€” Critical State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .sim-pulse-dot.critical {
   background: #f43f5e;
   box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.7);
@@ -2379,7 +2379,7 @@ body {
   min-width: 200px;
 }
 
-/* ── Collection Dashboard (Multi-Truck Header) ─────────────────────────────── */
+/* â”€â”€ Collection Dashboard (Multi-Truck Header) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .collection-dashboard {
   background: linear-gradient(135deg, #0c1a0e 0%, #0a2618 40%, #0a1a2e 100%);
   border: 1px solid rgba(16, 185, 129, 0.3);
@@ -2416,7 +2416,7 @@ body {
   color: rgba(255, 255, 255, 0.55);
 }
 
-/* ── Per-Truck Widget Grid ─────────────────────────────────────────────────── */
+/* â”€â”€ Per-Truck Widget Grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .truck-widgets-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -2554,7 +2554,7 @@ body {
   width: fit-content;
 }
 
-/* ── Truck Label Tag on Map Marker ─────────────────────────────────────────── */
+/* â”€â”€ Truck Label Tag on Map Marker â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .truck-label-tag {
   position: absolute;
   bottom: -4px;
@@ -2570,7 +2570,7 @@ body {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
 }
 
-/* ── Per-Vehicle Breakdown (Collection Complete) ───────────────────────────── */
+/* â”€â”€ Per-Vehicle Breakdown (Collection Complete) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .truck-breakdown-section {
   border-top: 1px solid var(--border-subtle);
   padding-top: 16px;
@@ -2685,7 +2685,7 @@ body {
   width: fit-content;
 }
 
-/* ── Responsive Adaptability ────────────────────────────────────────────────── */
+/* â”€â”€ Responsive Adaptability â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 @media (max-width: 1200px) {
   .stats-grid {
     grid-template-columns: repeat(3, 1fr);
@@ -2715,3 +2715,469 @@ body {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• 
+/* â”€â”€ Predictive Fill Forecast layout â”€â”€ */
+.predictive-below-map {
+  width: 100%;
+}
+
+
+/* â”€â”€ ffp-card: inherits .card but needs its own body padding override â”€â”€ */
+.ffp-card .card-body.ffp-body {
+  padding: 0 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Header actions */
+.ffp-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ffp-loading-pill {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--accent-cobalt);
+  background: var(--accent-cobalt-soft);
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+}
+
+.ffp-heatmap-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid var(--border-subtle);
+  background: transparent;
+  font-size: 0.73rem;
+  font-weight: 600;
+  color: var(--ink-secondary);
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+
+.ffp-heatmap-btn.active {
+  background: var(--ink-primary);
+  border-color: var(--ink-primary);
+  color: #fff;
+  box-shadow: var(--shadow-glow-cobalt);
+}
+
+.ffp-heatmap-btn:hover:not(.active) {
+  border-color: var(--accent-cobalt);
+  color: var(--accent-cobalt);
+}
+
+/* â”€â”€ Slider section â”€â”€ */
+.ffp-slider-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ffp-slider-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ffp-slider-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ink-secondary);
+}
+
+.ffp-time-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 11px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--ink-primary);
+}
+
+.ffp-error-msg {
+  font-size: 0.71rem;
+  color: var(--accent-coral);
+  margin-left: auto;
+}
+
+.ffp-slider-track-wrap {
+  position: relative;
+  padding-bottom: 22px;
+}
+
+.ffp-range {
+  width: 100%;
+  -webkit-appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(to right, #10b981 0%, #f59e0b 50%, #f43f5e 100%);
+  outline: none;
+  cursor: pointer;
+}
+
+.ffp-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2.5px solid var(--accent-cobalt);
+  box-shadow: 0 2px 6px rgba(37,99,235,0.25);
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+
+.ffp-range::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.ffp-tick-row {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 18px;
+}
+
+.ffp-tick {
+  position: absolute;
+  transform: translateX(-50%);
+  font-size: 0.61rem;
+  color: var(--ink-muted);
+  font-weight: 500;
+  user-select: none;
+}
+
+/* â”€â”€ Urgency summary strip â”€â”€ */
+.ffp-summary-strip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  background: var(--bg-subtle);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+}
+
+.ffp-urgency-row {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.ffp-urgency-chip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.ffp-chip-count {
+  font-weight: 800;
+  font-size: 0.78rem;
+}
+
+.ffp-chip-label {
+  font-weight: 500;
+}
+
+.ffp-action-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.ffp-overflow-note {
+  font-size: 0.71rem;
+  font-weight: 500;
+  color: var(--ink-secondary);
+  white-space: nowrap;
+}
+
+.ffp-route-btn {
+  white-space: nowrap;
+}
+
+/* â”€â”€ Predicted routes result bar â”€â”€ */
+.ffp-pred-routes-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 14px;
+  background: var(--accent-cobalt-soft);
+  border: 1px solid rgba(37,99,235,0.15);
+  border-radius: var(--radius-sm);
+}
+
+.ffp-pred-routes-title {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--accent-cobalt);
+}
+
+.ffp-pred-routes-chips {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.ffp-pred-route-chip {
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid;
+  font-size: 0.68rem;
+  font-weight: 600;
+  background: #ffffff;
+}
+
+.ffp-pred-dispatch-time {
+  font-size: 0.69rem;
+  color: var(--ink-secondary);
+  padding-top: 4px;
+  border-top: 1px solid rgba(37,99,235,0.12);
+}
+
+/* â”€â”€ Bin forecast table â”€â”€ */
+.ffp-table-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ffp-table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ffp-table-title {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--ink-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ffp-sort-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ffp-sort-label {
+  font-size: 0.68rem;
+  color: var(--ink-muted);
+  font-weight: 500;
+  margin-right: 4px;
+}
+
+.ffp-sort-btn {
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-subtle);
+  background: transparent;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--ink-secondary);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.ffp-sort-btn.active {
+  background: var(--ink-primary);
+  border-color: var(--ink-primary);
+  color: #ffffff;
+}
+
+.ffp-sort-btn:hover:not(.active) {
+  border-color: var(--accent-cobalt);
+  color: var(--accent-cobalt);
+}
+
+/* Table rows */
+.ffp-table {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  overflow-x: auto;
+  background: var(--bg-surface);
+}
+
+.ffp-row {
+  display: grid;
+  grid-template-columns: minmax(140px, 1.3fr) 74px 44px minmax(65px, 0.9fr) 52px 62px 68px 84px;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  transition: background 0.15s;
+  min-width: 590px;
+}
+
+.ffp-row:last-child {
+  border-bottom: none;
+}
+
+.ffp-row:not(.ffp-row-head):hover {
+  background: var(--bg-subtle);
+}
+
+.ffp-row-head {
+  background: var(--bg-subtle);
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-muted);
+  padding: 7px 12px;
+}
+
+.ffp-row-more {
+  justify-content: center;
+  background: var(--bg-subtle);
+  font-size: 0.7rem;
+  color: var(--ink-muted);
+  font-weight: 500;
+  display: flex;
+}
+
+/* Columns */
+.ffp-bin-name {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--ink-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ffp-col-zone {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 0;
+}
+
+.ffp-zone-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: var(--radius-xs);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--ink-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.ffp-col-now, .ffp-col-pred {
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Dual-layer bar */
+.ffp-bar-wrap {
+  position: relative;
+  height: 6px;
+  border-radius: 3px;
+  background: #f1f5f9;
+  overflow: hidden;
+}
+
+.ffp-bar-predicted {
+  position: absolute;
+  top: 0; left: 0; bottom: 0;
+  border-radius: 3px;
+  border: 1px solid;
+}
+
+.ffp-bar-current {
+  position: absolute;
+  top: 0; left: 0; bottom: 0;
+  border-radius: 3px;
+  opacity: 0.9;
+}
+
+/* Delta badges */
+.ffp-delta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  font-size: 0.67rem;
+  font-weight: 700;
+  padding: 2px 5px;
+  border-radius: var(--radius-xs);
+  white-space: nowrap;
+}
+
+.ffp-delta-up   { background: #fff1f2; color: var(--accent-coral); }
+.ffp-delta-down { background: var(--accent-emerald-soft); color: var(--accent-emerald); }
+.ffp-delta-flat { background: var(--bg-subtle); color: var(--ink-muted); }
+
+/* Status pill */
+.ffp-status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 3px 7px;
+  border-radius: var(--radius-pill);
+  font-size: 0.66rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.ffp-col-overflow {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--ink-secondary);
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Empty state */
+.ffp-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 36px 0;
+  color: var(--ink-muted);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+
+
+
+

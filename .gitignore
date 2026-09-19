@@ -23,6 +23,7 @@ wheels/
 .pytest_cache/
 *.db
 waste_optimizer.db
+*.venv/
 
 # Node
 node_modules/

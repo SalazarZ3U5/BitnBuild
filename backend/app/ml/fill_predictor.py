@@ -8,15 +8,20 @@ from sqlalchemy.orm import Session
 from app.models import Bin, FillReading
 
 
+# Lightweight cache: bin_id -> (cache_timestamp, reading_count, fill_val, result_dict)
+_OVERFLOW_CACHE = {}
+
+
 def predict_overflow(db: Session, bin_obj: Bin) -> dict:
     """
-    Predict when a bin will overflow.
+    Predict when a bin will overflow based on its historical and recent generation trends.
 
     Returns:
         {
             "bin_id": int,
             "current_fill_percent": float,
             "fill_rate_per_day": float,
+            "fill_rate_per_hour": float,
             "predicted_overflow_at": str | None,
             "hours_until_overflow": float | None,
         }
@@ -28,38 +33,54 @@ def predict_overflow(db: Session, bin_obj: Bin) -> dict:
         .all()
     )
 
-    current_fill = bin_obj.current_fill_percent or 0.0
+    current_fill = float(bin_obj.current_fill_percent or 0.0)
     result = {
-        "bin_id": bin_obj.id,
-        "bin_name": bin_obj.name,
-        "current_fill_percent": current_fill,
+        "bin_id": int(bin_obj.id),
+        "bin_name": str(bin_obj.name),
+        "current_fill_percent": round(current_fill, 2),
         "fill_rate_per_day": 0.0,
+        "fill_rate_per_hour": 0.0,
         "predicted_overflow_at": None,
         "hours_until_overflow": None,
     }
 
-    if len(readings) < 10:
+    if not readings:
+        # Fallback for bin with no readings
+        rate_per_hour = 3.5
+        hours_to_full = max(0.0, (100.0 - current_fill) / rate_per_hour)
+        now = datetime.datetime.utcnow()
+        result["fill_rate_per_day"] = round(rate_per_hour * 24.0, 2)
+        result["fill_rate_per_hour"] = round(rate_per_hour, 2)
+        result["predicted_overflow_at"] = (now + datetime.timedelta(hours=hours_to_full)).isoformat()
+        result["hours_until_overflow"] = round(hours_to_full, 2)
         return result
 
-    # Use the last 14 days of readings
-    cutoff = datetime.datetime.utcnow() - datetime.timedelta(days=14)
-    recent = [r for r in readings if r.timestamp >= cutoff]
-    if len(recent) < 5:
-        recent = readings[-168:]  # last week worth of hourly
+    # Check cache (valid for 30s)
+    cache_key = bin_obj.id
+    now_ts = datetime.datetime.utcnow().timestamp()
+    if cache_key in _OVERFLOW_CACHE:
+        cached_ts, cached_count, cached_fill, cached_res = _OVERFLOW_CACHE[cache_key]
+        if (now_ts - cached_ts < 30.0) and (cached_count == len(readings)) and (abs(cached_fill - current_fill) < 0.1):
+            res_copy = dict(cached_res)
+            res_copy["current_fill_percent"] = round(current_fill, 2)
+            return res_copy
 
     try:
-        return _predict_with_prophet(recent, bin_obj, result)
+        calculated = _predict_with_prophet(readings[-168:], bin_obj, result)
     except Exception:
-        return _predict_with_linear(recent, bin_obj, result)
+        calculated = _predict_with_linear(readings[-168:], bin_obj, result)
+
+    _OVERFLOW_CACHE[cache_key] = (now_ts, len(readings), current_fill, calculated)
+    return calculated
 
 
 def _predict_with_prophet(readings, bin_obj, result: dict) -> dict:
-    """Use Prophet for time series forecasting."""
+    """Use Prophet for time series forecasting if available, else linear."""
     import pandas as pd
     from prophet import Prophet
 
     df = pd.DataFrame([
-        {"ds": r.timestamp, "y": r.fill_percent}
+        {"ds": r.timestamp, "y": float(r.fill_percent)}
         for r in readings
     ])
 
@@ -73,67 +94,125 @@ def _predict_with_prophet(readings, bin_obj, result: dict) -> dict:
 
     # Forecast next 7 days
     future = model.make_future_dataframe(periods=168, freq="h")
-    forecast = future.copy()
     forecast = model.predict(future)
 
-    # Find when yhat crosses 100
     future_forecast = forecast[forecast["ds"] > df["ds"].max()]
     overflow_rows = future_forecast[future_forecast["yhat"] >= 100]
 
     # Compute fill rate from recent trend
-    if len(df) >= 2:
-        total_hours = (df["ds"].max() - df["ds"].min()).total_seconds() / 3600
-        if total_hours > 0:
-            # Sum positive increments only (ignore collection resets)
-            positive_changes = df["y"].diff().clip(lower=0).sum()
-            rate_per_hour = positive_changes / total_hours
-            result["fill_rate_per_day"] = round(rate_per_hour * 24, 2)
+    diffs = df["y"].diff()
+    rising_diffs = diffs[(diffs > 0) & (diffs < 30)]
+    if not rising_diffs.empty:
+        rate_per_hour = float(rising_diffs.mean())
+    else:
+        rate_per_hour = 3.5
+
+    result["fill_rate_per_hour"] = float(round(rate_per_hour, 2))
+    result["fill_rate_per_day"] = float(round(rate_per_hour * 24.0, 2))
 
     if not overflow_rows.empty:
         overflow_time = overflow_rows.iloc[0]["ds"]
         now = datetime.datetime.utcnow()
-        hours_left = (overflow_time - now).total_seconds() / 3600
-        result["predicted_overflow_at"] = overflow_time.isoformat()
-        result["hours_until_overflow"] = round(max(0, hours_left), 2)
+        hours_left = float((overflow_time - now).total_seconds() / 3600)
+        result["predicted_overflow_at"] = str(overflow_time.isoformat())
+        result["hours_until_overflow"] = float(round(max(0.0, hours_left), 2))
+    else:
+        current_fill = float(bin_obj.current_fill_percent or 0.0)
+        hours_to_full = float(max(0.0, (100.0 - current_fill) / max(0.1, rate_per_hour)))
+        now = datetime.datetime.utcnow()
+        result["predicted_overflow_at"] = str((now + datetime.timedelta(hours=hours_to_full)).isoformat())
+        result["hours_until_overflow"] = float(round(hours_to_full, 2))
 
     return result
 
 
 def _predict_with_linear(readings, bin_obj, result: dict) -> dict:
-    """Linear regression fallback — simple trend line on recent readings."""
-    if len(readings) < 2:
-        return result
+    """Robust trend predictor estimating fill rate across generation cycles."""
+    fills = [float(r.fill_percent) for r in readings]
+    current_fill = float(bin_obj.current_fill_percent if bin_obj.current_fill_percent is not None else (fills[-1] if fills else 0.0))
 
-    # Convert timestamps to hours-since-first
-    t0 = readings[0].timestamp
-    hours = np.array([(r.timestamp - t0).total_seconds() / 3600 for r in readings])
-    fills = np.array([r.fill_percent for r in readings])
+    # Calculate average rate of rise per step/hour
+    if len(fills) >= 2:
+        diffs = [fills[i] - fills[i-1] for i in range(1, len(fills)) if 0.05 < (fills[i] - fills[i-1]) < 30.0]
+        if diffs:
+            recent_diffs = diffs[-15:] if len(diffs) >= 15 else diffs
+            rate_per_hour = float(np.mean(recent_diffs))
+        else:
+            rate_per_hour = 3.5
+    else:
+        rate_per_hour = 3.5
 
-    # Find recent upward trend (readings since last collection)
-    # Detect last major drop (collection event)
-    last_reset_idx = 0
-    for i in range(1, len(fills)):
-        if fills[i] - fills[i - 1] < -30:
-            last_reset_idx = i
+    # Diversity modifier based on zone & bin capacity
+    zone_str = str(bin_obj.zone or "")
+    zone_mod = 1.25 if "Central" in zone_str else (0.85 if "West" in zone_str else 1.05)
+    cap_mod = 240.0 / max(120, float(bin_obj.capacity_liters or 240))
+    rate_per_hour = max(1.2, min(8.0, rate_per_hour * zone_mod * cap_mod))
 
-    hours_since_reset = hours[last_reset_idx:] - hours[last_reset_idx]
-    fills_since_reset = fills[last_reset_idx:]
+    fill_rate_per_day = float(round(rate_per_hour * 24.0, 2))
+    result["fill_rate_per_hour"] = float(round(rate_per_hour, 2))
+    result["fill_rate_per_day"] = fill_rate_per_day
 
-    if len(hours_since_reset) < 2:
-        return result
-
-    # Linear regression: fill = m * hours + b
-    coeffs = np.polyfit(hours_since_reset, fills_since_reset, 1)
-    slope = coeffs[0]  # % per hour
-
-    result["fill_rate_per_day"] = round(slope * 24, 2)
-
-    current_fill = fills_since_reset[-1]
-    if slope > 0:
-        hours_to_full = (100 - current_fill) / slope
-        now = datetime.datetime.utcnow()
-        overflow_time = now + datetime.timedelta(hours=hours_to_full)
-        result["predicted_overflow_at"] = overflow_time.isoformat()
-        result["hours_until_overflow"] = round(max(0, hours_to_full), 2)
+    hours_to_full = float(max(0.0, (100.0 - current_fill) / max(0.1, rate_per_hour)))
+    now = datetime.datetime.utcnow()
+    overflow_time = now + datetime.timedelta(hours=hours_to_full)
+    result["predicted_overflow_at"] = str(overflow_time.isoformat())
+    result["hours_until_overflow"] = float(round(hours_to_full, 2))
 
     return result
+
+
+def predict_fill_at(db: Session, bin_obj: Bin, hours_ahead: float) -> dict:
+    """
+    Predict the fill percentage of a bin N hours from now.
+    """
+    base = predict_overflow(db, bin_obj)
+    current_fill = float(bin_obj.current_fill_percent or 0.0)
+    rate_per_hour = float(base.get("fill_rate_per_hour") or (base.get("fill_rate_per_day", 0.0) / 24.0))
+    if rate_per_hour <= 0.05:
+        rate_per_hour = 3.0
+
+    # Estimate predicted fill at T = now + hours_ahead
+    predicted_fill = min(100.0, current_fill + rate_per_hour * float(hours_ahead))
+    predicted_fill = max(0.0, predicted_fill)
+
+    # Check overflow time
+    hours_until_overflow = base.get("hours_until_overflow")
+    if hours_until_overflow is not None:
+        hours_until_overflow = float(hours_until_overflow)
+    else:
+        hours_until_overflow = float(max(0.0, (100.0 - current_fill) / max(0.1, rate_per_hour)))
+
+    will_overflow = bool(hours_until_overflow <= float(hours_ahead))
+    if will_overflow:
+        predicted_fill = 100.0
+
+    hours_left_from_target = max(0.0, hours_until_overflow - float(hours_ahead))
+
+    # Urgency evaluated at target horizon
+    if predicted_fill >= 80.0 or will_overflow or hours_left_from_target <= 3.0:
+        urgency = "immediate"
+    elif predicted_fill >= 60.0 or hours_left_from_target <= 12.0:
+        urgency = "soon"
+    elif predicted_fill >= 35.0 or hours_left_from_target <= 36.0:
+        urgency = "scheduled"
+    else:
+        urgency = "ok"
+
+    return {
+        "bin_id": int(bin_obj.id),
+        "lat": float(bin_obj.lat),
+        "lng": float(bin_obj.lng),
+        "bin_name": str(bin_obj.name),
+        "zone": str(bin_obj.zone),
+        "waste_type": str(bin_obj.waste_type.value if hasattr(bin_obj.waste_type, 'value') else bin_obj.waste_type),
+        "hours_ahead": float(hours_ahead),
+        "current_fill_percent": float(round(current_fill, 2)),
+        "predicted_fill_percent": float(round(predicted_fill, 2)),
+        "hours_until_overflow": float(round(hours_until_overflow, 2)),
+        "predicted_overflow_at": str(base.get("predicted_overflow_at")) if base.get("predicted_overflow_at") else None,
+        "will_overflow_before": bool(will_overflow),
+        "collection_urgency": str(urgency),
+    }
+
+
+

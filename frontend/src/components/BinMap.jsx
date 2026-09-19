@@ -1,4 +1,4 @@
-import { useEffect, useRef, useMemo } from 'react';
+import { useEffect, useRef, useMemo, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, CircleMarker, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -54,7 +54,76 @@ function MultiTruckController({ truckStates, collectionActive }) {
   return null;
 }
 
-// Individual truck marker with its own color and label
+// Heatmap overlay: canvas-based colored circles showing predicted fill levels
+function HeatmapLayer({ heatmapData, hoursAhead = 0 }) {
+  const map = useMap();
+  const layerRef = useRef(null);
+
+  const getHeatColor = useCallback((intensity) => {
+    // Green → Yellow → Orange → Red gradient
+    const r = Math.round(intensity < 0.5 ? intensity * 2 * 255 : 255);
+    const g = Math.round(intensity < 0.5 ? 255 : (1 - (intensity - 0.5) * 2) * 255);
+    return `rgb(${r},${g},30)`;
+  }, []);
+
+  useEffect(() => {
+    if (layerRef.current) {
+      map.removeLayer(layerRef.current);
+      layerRef.current = null;
+    }
+    if (!heatmapData || heatmapData.length === 0) return;
+
+    const group = L.layerGroup();
+    heatmapData.forEach(point => {
+      if (!point || typeof point.lat !== 'number' || typeof point.lng !== 'number' || isNaN(point.lat) || isNaN(point.lng)) return;
+      const intensity = point.intensity || 0;
+      const color = getHeatColor(intensity);
+      // Small proportional radius: 9px at 0% fill up to 17px at 100% fill (critical)
+      const radius = 9 + intensity * 8;
+      const circle = L.circleMarker([point.lat, point.lng], {
+        radius: radius,
+        fillColor: color,
+        fillOpacity: 0.75,
+        color: '#ffffff',
+        weight: 1.5,
+        opacity: 0.95,
+      });
+      circle.bindPopup(`
+        <div style="font-size:13px;line-height:1.6">
+          <strong>${point.bin_name || 'Bin'}</strong><br/>
+          <span style="color:#64748b">Zone ${point.zone || '?'} · ${point.waste_type || ''}</span><br/>
+          <strong>Now:</strong> ${Math.round(point.current_fill_percent || 0)}%<br/>
+          <strong>T+${hoursAhead}h:</strong> <span style="color:${color};font-weight:700">${Math.round(point.predicted_fill_percent || 0)}%</span><br/>
+          ${point.hours_until_overflow != null
+            ? `<strong>Overflow in:</strong> ${point.hours_until_overflow.toFixed(1)}h`
+            : ''}
+          <br/><span style="background:${
+            {immediate:'#f43f5e',soon:'#f97316',scheduled:'#f59e0b',ok:'#10b981'}[point.collection_urgency]||'#94a3b8'
+          }20;color:${
+            {immediate:'#f43f5e',soon:'#f97316',scheduled:'#f59e0b',ok:'#10b981'}[point.collection_urgency]||'#94a3b8'
+          };padding:2px 6px;border-radius:4px;font-size:11px;font-weight:600">${
+            {immediate:'Critical Overflow',soon:'Collection Soon',scheduled:'Scheduled',ok:'Nominal'}[point.collection_urgency]||point.collection_urgency
+          }</span>
+        </div>
+      `, { maxWidth: 200 });
+      group.addLayer(circle);
+    });
+
+
+    group.addTo(map);
+    layerRef.current = group;
+    return () => {
+      if (layerRef.current) {
+        map.removeLayer(layerRef.current);
+        layerRef.current = null;
+      }
+    };
+  }, [map, heatmapData, hoursAhead, getHeatColor]);
+
+  return null;
+}
+
+
 function TruckMarker({ truck }) {
   const icon = useMemo(() => L.divIcon({
     className: 'truck-marker-icon',
@@ -112,7 +181,7 @@ function TruckMarker({ truck }) {
   );
 }
 
-function BinMap({ bins, routes, truckStates = [], collectionActive, totalWasteCollected = 0 }) {
+function BinMap({ bins, routes, truckStates = [], collectionActive, totalWasteCollected = 0, heatmapData = [], heatmapMode = false, heatmapHoursAhead = 0 }) {
   const center = [23.0225, 72.5714];
 
   // Derive collected bin names from all trucks
@@ -145,6 +214,9 @@ function BinMap({ bins, routes, truckStates = [], collectionActive, totalWasteCo
       >
         <MapController />
         <MultiTruckController truckStates={truckStates} collectionActive={collectionActive} />
+        {heatmapMode && heatmapData.length > 0 && (
+          <HeatmapLayer heatmapData={heatmapData} hoursAhead={heatmapHoursAhead} />
+        )}
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
