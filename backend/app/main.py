@@ -4,7 +4,13 @@ FastAPI application — AI-Powered Waste Management & Recycling Optimizer.
 import json
 import asyncio
 from contextlib import asynccontextmanager
-from typing import Set
+import sys
+from pathlib import Path
+
+# Add backend directory to sys.path for direct script execution
+backend_dir = str(Path(__file__).resolve().parent.parent)
+if backend_dir not in sys.path:
+    sys.path.insert(0, backend_dir)
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
@@ -167,3 +173,8 @@ async def websocket_endpoint(websocket: WebSocket):
                 pass
     except WebSocketDisconnect:
         manager.disconnect(websocket)
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
