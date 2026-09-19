@@ -4,19 +4,19 @@ import {
 } from 'recharts';
 
 const WASTE_COLORS = {
-  Plastic: '#3b82f6',
+  Plastic: '#2563eb',
   Paper: '#f59e0b',
   Metal: '#8b5cf6',
   Glass: '#06b6d4',
   Organic: '#10b981',
-  Other: '#ef4444',
+  Other: '#f43f5e',
 };
 
 function StatsCharts({ bins }) {
   if (!bins || bins.length === 0) {
     return (
-      <div className="empty-state">
-        <p>No bin data available for charts</p>
+      <div className="modern-empty-state">
+        <p>No telemetry records available for distribution charts</p>
       </div>
     );
   }
@@ -39,7 +39,7 @@ function StatsCharts({ bins }) {
     { name: '0-25%', count: 0, fill: '#10b981' },
     { name: '26-50%', count: 0, fill: '#06b6d4' },
     { name: '51-75%', count: 0, fill: '#f59e0b' },
-    { name: '76-100%', count: 0, fill: '#ef4444' },
+    { name: '76-100%', count: 0, fill: '#f43f5e' },
   ];
 
   bins.forEach(b => {
@@ -51,67 +51,84 @@ function StatsCharts({ bins }) {
   });
 
   return (
-    <div>
-      <h4 style={{ color: 'var(--text-secondary)', marginBottom: '0.75rem', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '1px' }}>
-        Bins by Waste Type
-      </h4>
-      <div style={{ width: '100%', height: 200 }}>
-        <ResponsiveContainer>
-          <PieChart>
-            <Pie
-              data={typeData}
-              cx="50%"
-              cy="50%"
-              innerRadius={40}
-              outerRadius={70}
-              paddingAngle={3}
-              dataKey="count"
-            >
-              {typeData.map((entry, i) => (
-                <Cell key={i} fill={entry.fill} />
-              ))}
-            </Pie>
-            <Tooltip
-              contentStyle={{
-                background: '#1a1f35',
-                border: '1px solid rgba(148,163,184,0.2)',
-                borderRadius: 8,
-                color: '#f1f5f9',
-                fontSize: 12,
-              }}
-            />
-            <Legend
-              wrapperStyle={{ fontSize: 11, color: '#94a3b8' }}
-            />
-          </PieChart>
-        </ResponsiveContainer>
+    <div className="stats-charts-wrapper">
+      <div className="chart-sub-section">
+        <div className="chart-mini-header">
+          <span className="chart-mini-label">Categorical Stream Allocation</span>
+        </div>
+        <div style={{ width: '100%', height: 180 }}>
+          <ResponsiveContainer>
+            <PieChart>
+              <Pie
+                data={typeData}
+                cx="50%"
+                cy="50%"
+                innerRadius={45}
+                outerRadius={72}
+                paddingAngle={3}
+                dataKey="count"
+              >
+                {typeData.map((entry, i) => (
+                  <Cell key={i} fill={entry.fill} />
+                ))}
+              </Pie>
+              <Tooltip
+                contentStyle={{
+                  background: '#ffffff',
+                  border: '1px solid rgba(15, 23, 42, 0.08)',
+                  borderRadius: 10,
+                  boxShadow: '0 8px 20px -4px rgba(0,0,0,0.1)',
+                  color: '#0f172a',
+                  fontSize: 12,
+                  fontWeight: 600,
+                }}
+              />
+              <Legend
+                wrapperStyle={{ fontSize: 11, color: '#64748b' }}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
       </div>
 
-      <h4 style={{ color: 'var(--text-secondary)', marginBottom: '0.75rem', marginTop: '1rem', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '1px' }}>
-        Fill Level Distribution
-      </h4>
-      <div style={{ width: '100%', height: 160 }}>
-        <ResponsiveContainer>
-          <BarChart data={fillBuckets}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.1)" />
-            <XAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 11 }} />
-            <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} />
-            <Tooltip
-              contentStyle={{
-                background: '#1a1f35',
-                border: '1px solid rgba(148,163,184,0.2)',
-                borderRadius: 8,
-                color: '#f1f5f9',
-                fontSize: 12,
-              }}
-            />
-            <Bar dataKey="count" name="Bins" radius={[4, 4, 0, 0]}>
-              {fillBuckets.map((entry, i) => (
-                <Cell key={i} fill={entry.fill} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
+      <div className="chart-sub-section mt-4">
+        <div className="chart-mini-header">
+          <span className="chart-mini-label">Fill Bracket Dispersion</span>
+        </div>
+        <div style={{ width: '100%', height: 160 }}>
+          <ResponsiveContainer>
+            <BarChart data={fillBuckets} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(15, 23, 42, 0.06)" />
+              <XAxis 
+                dataKey="name" 
+                tick={{ fill: '#64748b', fontSize: 11, fontWeight: 500 }} 
+                axisLine={{ stroke: 'rgba(15, 23, 42, 0.08)' }}
+                tickLine={false}
+              />
+              <YAxis 
+                tick={{ fill: '#64748b', fontSize: 11 }} 
+                axisLine={false}
+                tickLine={false}
+              />
+              <Tooltip
+                contentStyle={{
+                  background: '#ffffff',
+                  border: '1px solid rgba(15, 23, 42, 0.08)',
+                  borderRadius: 10,
+                  boxShadow: '0 8px 20px -4px rgba(0,0,0,0.1)',
+                  color: '#0f172a',
+                  fontSize: 12,
+                  fontWeight: 600,
+                }}
+              />
+              <Bar dataKey="count" name="Bins" radius={[5, 5, 0, 0]}>
+                {fillBuckets.map((entry, i) => (
+                  <Cell key={i} fill={entry.fill} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       </div>
     </div>
   );

@@ -1,8 +1,10 @@
-import { MapContainer, TileLayer, Marker, Popup, Polyline, CircleMarker } from 'react-leaflet';
+import { useState, useEffect } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, CircleMarker, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
+import { Layers } from 'lucide-react';
+import L from 'leaflet';
 
 // Fix Leaflet default icon issue in bundlers
-import L from 'leaflet';
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -10,64 +12,130 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
-const ROUTE_COLORS = ['#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#06b6d4', '#10b981'];
+const ROUTE_COLORS = ['#2563eb', '#8b5cf6', '#f59e0b', '#f43f5e', '#06b6d4', '#10b981'];
 
 function getFillColor(fill) {
-  if (fill > 80) return '#ef4444';
+  if (fill > 80) return '#f43f5e';
   if (fill > 50) return '#f59e0b';
   return '#10b981';
 }
 
+// Controller to fix Leaflet grey tile / size calculation bugs
+function MapController() {
+  const map = useMap();
+  useEffect(() => {
+    map.invalidateSize();
+    const t1 = setTimeout(() => map.invalidateSize(), 150);
+    const t2 = setTimeout(() => map.invalidateSize(), 500);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [map]);
+  return null;
+}
+
 function BinMap({ bins, routes }) {
-  // Center on Bangalore
-  const center = [12.9716, 77.5946];
+  // Center on Ahmedabad (AMC Municipal Region)
+  const center = [23.0225, 72.5714];
+  const [mapStyle, setMapStyle] = useState('osm'); // 'osm' or 'carto'
+
+  const tileProviders = {
+    osm: {
+      url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      maxZoom: 19,
+    },
+    carto: {
+      url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      subdomains: 'abcd',
+      maxZoom: 20,
+    }
+  };
+
+  const activeProvider = tileProviders[mapStyle];
 
   return (
-    <div className="map-container">
+    <div className="map-container-wrapper">
+      {/* Map Tile Style Toggle */}
+      <div className="map-layer-selector">
+        <button 
+          className={`layer-toggle-btn ${mapStyle === 'osm' ? 'active' : ''}`}
+          onClick={() => setMapStyle('osm')}
+          title="OpenStreetMap Standard"
+        >
+          OSM Clean
+        </button>
+        <button 
+          className={`layer-toggle-btn ${mapStyle === 'carto' ? 'active' : ''}`}
+          onClick={() => setMapStyle('carto')}
+          title="Carto Positron Light"
+        >
+          Carto Light
+        </button>
+      </div>
+
       <MapContainer
         center={center}
         zoom={12}
         style={{ height: '100%', width: '100%' }}
         scrollWheelZoom={true}
       >
+        <MapController />
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          key={mapStyle}
+          url={activeProvider.url}
+          attribution={activeProvider.attribution}
+          subdomains={activeProvider.subdomains || 'abc'}
+          maxZoom={activeProvider.maxZoom || 19}
         />
 
         {/* Bin markers */}
-        {bins.map(bin => (
-          <CircleMarker
-            key={bin.id}
-            center={[bin.lat, bin.lng]}
-            radius={8}
-            fillColor={getFillColor(bin.current_fill_percent)}
-            fillOpacity={0.85}
-            color={getFillColor(bin.current_fill_percent)}
-            weight={2}
-            opacity={0.6}
-          >
-            <Popup>
-              <div style={{ fontFamily: 'Inter, sans-serif', minWidth: 160 }}>
-                <strong style={{ fontSize: '0.95rem' }}>{bin.name}</strong>
-                <br />
-                <span style={{ color: getFillColor(bin.current_fill_percent), fontWeight: 700, fontSize: '1.1rem' }}>
-                  {Math.round(bin.current_fill_percent)}%
-                </span>
-                {' '}filled
-                <br />
-                <span style={{ color: '#888', fontSize: '0.8rem' }}>
-                  Type: {bin.waste_type} · Zone: {bin.zone}
-                </span>
-              </div>
-            </Popup>
-          </CircleMarker>
-        ))}
+        {bins.map(bin => {
+          const color = getFillColor(bin.current_fill_percent);
+          return (
+            <CircleMarker
+              key={bin.id}
+              center={[bin.lat, bin.lng]}
+              radius={7}
+              fillColor={color}
+              fillOpacity={0.9}
+              color="#ffffff"
+              weight={2}
+              opacity={1}
+            >
+              <Popup className="modern-map-popup">
+                <div className="popup-card">
+                  <div className="popup-header">
+                    <span className="popup-zone-badge">{bin.zone}</span>
+                    <span className="popup-waste-tag">{bin.waste_type}</span>
+                  </div>
+                  <div className="popup-title">{bin.name}</div>
+                  <div className="popup-stat-row">
+                    <span className="popup-fill-label">Fill Level:</span>
+                    <span className="popup-fill-val" style={{ color: color }}>
+                      {Math.round(bin.current_fill_percent)}%
+                    </span>
+                  </div>
+                  <div className="popup-progress-track">
+                    <div 
+                      className="popup-progress-fill" 
+                      style={{ width: `${bin.current_fill_percent}%`, backgroundColor: color }}
+                    />
+                  </div>
+                  <div className="popup-coordinates">
+                    {bin.lat.toFixed(4)}, {bin.lng.toFixed(4)}
+                  </div>
+                </div>
+              </Popup>
+            </CircleMarker>
+          );
+        })}
 
         {/* Route polylines */}
         {routes.map((route, idx) => {
           const color = ROUTE_COLORS[idx % ROUTE_COLORS.length];
-          // Build polyline: depot → stops → depot
           const positions = [];
           if (route.depot) {
             positions.push([route.depot.lat, route.depot.lng]);
@@ -86,9 +154,9 @@ function BinMap({ bins, routes }) {
               key={`route-${idx}`}
               positions={positions}
               color={color}
-              weight={3}
-              opacity={0.8}
-              dashArray="8 4"
+              weight={4}
+              opacity={0.85}
+              dashArray="6 4"
             />
           );
         })}
@@ -98,9 +166,17 @@ function BinMap({ bins, routes }) {
           if (!route.depot) return null;
           return (
             <Marker key={`depot-${idx}`} position={[route.depot.lat, route.depot.lng]}>
-              <Popup>
-                <strong>🚛 {route.vehicle_name}</strong>
-                <br />Depot location
+              <Popup className="modern-map-popup">
+                <div className="popup-card">
+                  <div className="popup-header">
+                    <span className="popup-zone-badge">Depot Hub</span>
+                  </div>
+                  <div className="popup-title">🚛 {route.vehicle_name}</div>
+                  <div className="popup-stat-row">
+                    <span>Assigned Stops:</span>
+                    <strong>{route.stops.length} Bins</strong>
+                  </div>
+                </div>
               </Popup>
             </Marker>
           );

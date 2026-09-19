@@ -1,73 +1,75 @@
-const ROUTE_COLORS = ['#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#06b6d4', '#10b981'];
+import { Truck, MapPin, CheckCircle2, ChevronRight, Navigation } from 'lucide-react';
 
-function getFillClass(fill) {
-  if (fill > 80) return 'fill-red';
-  if (fill > 50) return 'fill-yellow';
-  return 'fill-green';
+const ROUTE_COLORS = ['#2563eb', '#8b5cf6', '#f59e0b', '#f43f5e', '#06b6d4', '#10b981'];
+
+function getFillBadgeClass(fill) {
+  if (fill > 80) return 'badge-fill-red';
+  if (fill > 50) return 'badge-fill-amber';
+  return 'badge-fill-green';
 }
 
 function RoutePanel({ routes, loading }) {
   if (loading) {
     return (
-      <div className="loading">
-        <div className="spinner"></div>
-        Optimizing routes...
+      <div className="modern-loading-panel">
+        <div className="modern-spinner"></div>
+        <p>Solving Capacitated VRP via Google OR-Tools...</p>
       </div>
     );
   }
 
   if (!routes || routes.length === 0) {
     return (
-      <div className="empty-state">
-        <p style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🚛</p>
-        <p>No routes generated yet.</p>
-        <p style={{ fontSize: '0.8rem', marginTop: '0.5rem' }}>
-          Click "Generate Routes" to create optimized collection routes
-        </p>
+      <div className="modern-empty-state">
+        <div className="empty-state-icon-box">
+          <Truck size={32} />
+        </div>
+        <h4>No Active Dispatches</h4>
+        <p>Click "Generate Optimal Routes" to compute vehicle paths based on bin fill urgency.</p>
       </div>
     );
   }
 
   return (
-    <div className="route-panel">
-      {routes.map((route, idx) => (
-        <div key={idx} className="route-item">
-          <div className="route-vehicle">
-            <div className="route-vehicle-name">
-              <span style={{
-                display: 'inline-block',
-                width: 10,
-                height: 10,
-                borderRadius: '50%',
-                background: ROUTE_COLORS[idx % ROUTE_COLORS.length],
-                marginRight: 4,
-              }} />
-              🚛 {route.vehicle_name}
+    <div className="route-panel-modern">
+      {routes.map((route, idx) => {
+        const themeColor = ROUTE_COLORS[idx % ROUTE_COLORS.length];
+        return (
+          <div key={idx} className="route-card-item">
+            <div className="route-header-strip">
+              <div className="route-vehicle-info">
+                <div 
+                  className="vehicle-color-pill" 
+                  style={{ backgroundColor: themeColor }}
+                />
+                <span className="route-vehicle-name">{route.vehicle_name}</span>
+              </div>
+              <div className="route-metrics-tag">
+                <Navigation size={12} />
+                <span>{route.total_distance_km} km</span>
+              </div>
             </div>
-            <div className="route-distance">
-              {route.total_distance_km} km
+
+            <div className="route-stops-timeline">
+              {route.stops
+                .sort((a, b) => a.stop_order - b.stop_order)
+                .map((stop, sIdx) => (
+                  <div key={sIdx} className="route-stop-node">
+                    <div className="stop-index-bubble" style={{ borderColor: themeColor }}>
+                      {sIdx + 1}
+                    </div>
+                    <div className="stop-content">
+                      <span className="stop-bin-name">{stop.bin_name}</span>
+                      <span className={`stop-fill-pill ${getFillBadgeClass(stop.fill_percent)}`}>
+                        {Math.round(stop.fill_percent)}% Fill
+                      </span>
+                    </div>
+                  </div>
+                ))}
             </div>
           </div>
-          <ul className="route-stops">
-            {route.stops
-              .sort((a, b) => a.stop_order - b.stop_order)
-              .map((stop, sIdx) => (
-                <li key={sIdx} className="route-stop">
-                  <span
-                    className="route-stop-number"
-                    style={{ background: ROUTE_COLORS[idx % ROUTE_COLORS.length] }}
-                  >
-                    {sIdx + 1}
-                  </span>
-                  <span>{stop.bin_name}</span>
-                  <span className={`route-stop-fill ${getFillClass(stop.fill_percent)}`}>
-                    {Math.round(stop.fill_percent)}%
-                  </span>
-                </li>
-              ))}
-          </ul>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

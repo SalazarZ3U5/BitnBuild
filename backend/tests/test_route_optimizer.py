@@ -13,9 +13,9 @@ def test_haversine_distance():
     """Haversine should give a known distance between two points."""
     from app.ml.route_optimizer import haversine_km
 
-    # Bangalore city center to Electronic City (~18km)
-    dist = haversine_km(12.9716, 77.5946, 12.8399, 77.6770)
-    assert 14 < dist < 20, f"Expected ~18km, got {dist}"
+    # Ahmedabad city center to GIFT City / Gandhinagar (~24km)
+    dist = haversine_km(23.0225, 72.5714, 23.2156, 72.6840)
+    assert 20 < dist < 30, f"Expected ~24km, got {dist}"
 
 
 def test_haversine_same_point():

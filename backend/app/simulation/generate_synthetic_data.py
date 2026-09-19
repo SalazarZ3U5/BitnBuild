@@ -1,7 +1,7 @@
 """
-Synthetic data generator for the Waste Management Optimizer demo.
-Creates ~40 bins across Bangalore, backfills 60 days of hourly fill readings,
-creates 3 collection vehicles, and generates initial alerts.
+Synthetic data generator for Ahmedabad Municipal Corporation (AMC) Waste Management.
+Creates ~40 bins across Ahmedabad, backfills 60 days of hourly fill readings,
+creates 3 AMC collection vehicles, and generates initial alerts.
 """
 import random
 import datetime
@@ -9,45 +9,47 @@ import math
 from sqlalchemy.orm import Session
 from app.models import Bin, FillReading, Vehicle, Alert, WasteType
 
-# Bangalore city center area
-CENTER_LAT = 12.9716
-CENTER_LNG = 77.5946
+# Ahmedabad Municipal Corporation (AMC) center coordinates
+CENTER_LAT = 23.0225
+CENTER_LNG = 72.5714
 
-# Zone definitions with approximate offsets from center
+# Official AMC administrative zones with approximate geographic coordinates
 ZONES = {
-    "Zone-A": {"lat_offset": 0.02, "lng_offset": -0.02, "bins": 8},
-    "Zone-B": {"lat_offset": -0.01, "lng_offset": 0.03, "bins": 8},
-    "Zone-C": {"lat_offset": 0.03, "lng_offset": 0.01, "bins": 8},
-    "Zone-D": {"lat_offset": -0.03, "lng_offset": -0.01, "bins": 8},
-    "Zone-E": {"lat_offset": 0.0, "lng_offset": 0.0, "bins": 8},
+    "West Zone (Navrangpura)": {"lat_offset": 0.015, "lng_offset": -0.015, "bins": 8},
+    "North West Zone (Bodakdev)": {"lat_offset": 0.035, "lng_offset": -0.040, "bins": 8},
+    "South West Zone (Satellite)": {"lat_offset": -0.015, "lng_offset": -0.045, "bins": 8},
+    "Central Zone (Khadia/Riverfront)": {"lat_offset": 0.005, "lng_offset": 0.010, "bins": 8},
+    "East Zone (Bapunagar/Nikol)": {"lat_offset": 0.020, "lng_offset": 0.055, "bins": 8},
 }
 
 WASTE_TYPES = list(WasteType)
 
-BIN_NAME_PREFIXES = [
-    "Market", "Park", "School", "Hospital", "Mall", "Station",
-    "Office", "Residential", "Community", "Temple", "Library",
-    "Stadium", "Bus Stop", "Cinema", "Restaurant", "College",
-    "Apartment", "Garden", "Playground", "Bridge"
+AHMEDABAD_LANDMARKS = [
+    "Sabarmati Riverfront", "Kankaria Lake", "Manek Chowk", "Law Garden",
+    "Vastrapur Lake", "IIM Ahmedabad", "Science City", "Sindhu Bhavan",
+    "Kalupur Terminal", "Paldi Market", "Alpha One Mall", "Ellis Bridge",
+    "Sidi Saiyyed Plaza", "Bhadra Fort", "Prahlad Nagar Garden", "Gujarat University",
+    "Civil Hospital", "Gita Mandir Bus Port", "Naranpura Sports Complex", "Sarkhej Roza",
+    "Nehru Bridge", "Ambawadi Circle", "C.G. Road", "S.G. Highway"
 ]
 
 
 def generate_bins(db: Session) -> list[Bin]:
-    """Create ~40 bins across zones."""
+    """Create ~40 bins across Ahmedabad AMC zones."""
     bins = []
     bin_counter = 1
 
     for zone_name, zone_info in ZONES.items():
         for i in range(zone_info["bins"]):
             # Random position within the zone
-            lat = CENTER_LAT + zone_info["lat_offset"] + random.uniform(-0.015, 0.015)
-            lng = CENTER_LNG + zone_info["lng_offset"] + random.uniform(-0.015, 0.015)
+            lat = CENTER_LAT + zone_info["lat_offset"] + random.uniform(-0.012, 0.012)
+            lng = CENTER_LNG + zone_info["lng_offset"] + random.uniform(-0.012, 0.012)
             capacity = random.choice([120, 240, 360, 480])
             waste_type = random.choice(WASTE_TYPES)
-            prefix = random.choice(BIN_NAME_PREFIXES)
+            landmark = random.choice(AHMEDABAD_LANDMARKS)
 
             bin_obj = Bin(
-                name=f"{prefix} Bin {bin_counter}",
+                name=f"{landmark} Bin {bin_counter}",
                 lat=round(lat, 6),
                 lng=round(lng, 6),
                 capacity_liters=capacity,
@@ -131,19 +133,19 @@ def generate_fill_readings(db: Session, bins: list[Bin], days: int = 60):
 
 
 def generate_vehicles(db: Session) -> list[Vehicle]:
-    """Create 3 collection vehicles with depots near the city center."""
+    """Create 3 AMC collection vehicles with depots near Ahmedabad hubs."""
     vehicles = []
     depot_positions = [
-        (CENTER_LAT + 0.01, CENTER_LNG - 0.01),
-        (CENTER_LAT - 0.02, CENTER_LNG + 0.02),
-        (CENTER_LAT + 0.005, CENTER_LNG + 0.015),
+        (CENTER_LAT + 0.012, CENTER_LNG - 0.015),  # West Depot (Ashram Road)
+        (CENTER_LAT - 0.020, CENTER_LNG + 0.025),  # South Depot (Kankaria/Danilimda)
+        (CENTER_LAT + 0.025, CENTER_LNG - 0.035),  # North-West Depot (Bodakdev)
     ]
-    names = ["Truck Alpha", "Truck Beta", "Truck Gamma"]
+    names = ["AMC Swachhata Vahini 01", "AMC Swachhata Vahini 02", "AMC Swachhata Vahini 03"]
 
     for i, (dlat, dlng) in enumerate(depot_positions):
         vehicle = Vehicle(
             name=names[i],
-            capacity_liters=random.choice([1000, 1200, 1500]),
+            capacity_liters=random.choice([1200, 1500, 1800]),
             depot_lat=round(dlat, 6),
             depot_lng=round(dlng, 6),
             current_lat=round(dlat, 6),

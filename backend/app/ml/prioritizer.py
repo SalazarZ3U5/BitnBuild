@@ -18,9 +18,9 @@ WASTE_TYPE_WEIGHTS = {
     WasteType.OTHER: 0.6,       # Could contain hazardous items
 }
 
-# Reference depot location (center of Bangalore area)
-DEPOT_LAT = 12.9716
-DEPOT_LNG = 77.5946
+# Reference depot location (center of Ahmedabad AMC area)
+DEPOT_LAT = 23.0225
+DEPOT_LNG = 72.5714
 
 
 def haversine_km(lat1: float, lng1: float, lat2: float, lng2: float) -> float:

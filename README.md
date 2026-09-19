@@ -13,7 +13,7 @@ That's it! The system will:
 2. Start the **FastAPI backend** on [http://localhost:8000](http://localhost:8000)
 3. Start the **React dashboard** on [http://localhost:5173](http://localhost:5173)
 
-On first launch, the backend automatically seeds **40 bins** across Bangalore with 60 days of synthetic fill data, 3 collection vehicles, and initial alerts.
+On first launch, the backend automatically seeds **40 bins** across Ahmedabad (AMC) with 60 days of synthetic fill data, 3 collection vehicles, and initial alerts.
 
 ## 🏗️ Architecture
 

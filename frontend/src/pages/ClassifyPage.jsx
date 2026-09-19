@@ -1,5 +1,16 @@
 import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
+import { 
+  UploadCloud, 
+  Sparkles, 
+  Cpu, 
+  CheckCircle2, 
+  AlertCircle, 
+  FileImage,
+  RefreshCw,
+  ArrowRight,
+  ShieldCheck
+} from 'lucide-react';
 import api from '../api';
 
 function ClassifyPage() {
@@ -28,7 +39,7 @@ function ClassifyPage() {
       });
       setResult(res.data);
     } catch (err) {
-      setError(err.response?.data?.detail || 'Classification failed');
+      setError(err.response?.data?.detail || 'Classification failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -49,96 +60,177 @@ function ClassifyPage() {
     Other: '📦',
   };
 
+  const isRecyclable = (cat) => {
+    return ['Plastic', 'Paper', 'Metal', 'Glass'].includes(cat);
+  };
+
   return (
-    <div>
-      <div className="page-header">
-        <h2>Waste Classification</h2>
-        <p>Upload an image to identify the waste category using AI</p>
+    <div className="page-container">
+      {/* Editorial Page Header */}
+      <div className="page-header-editorial">
+        <div className="header-left">
+          <div className="header-category-badge">
+            <Sparkles size={13} />
+            Computer Vision Inference · 128×128 RGB
+          </div>
+          <h1 className="editorial-title">
+            Visual <em>intelligence</em> for waste classification
+          </h1>
+          <p className="editorial-subtitle">
+            Upload waste item imagery to instantly infer material category and sorting stream via on-device PyTorch LargeNet CNN.
+          </p>
+        </div>
       </div>
 
-      <div className="classify-layout">
-        <div className="card">
+      <div className="classify-layout-editorial">
+        {/* Left: Upload card */}
+        <div className="card classify-upload-card">
           <div className="card-header">
-            <h3>📸 Upload Image</h3>
+            <div className="card-header-titles">
+              <div className="card-badge badge-neutral">Input Feed</div>
+              <h3>Source Imagery</h3>
+            </div>
+            {preview && (
+              <button 
+                className="btn btn-ghost btn-sm"
+                onClick={() => {
+                  setImage(null);
+                  setPreview(null);
+                  setResult(null);
+                }}
+              >
+                Clear Image
+              </button>
+            )}
           </div>
           <div className="card-body">
             <div
               {...getRootProps()}
-              className={`dropzone ${isDragActive ? 'active' : ''}`}
+              className={`modern-dropzone ${isDragActive ? 'drag-active' : ''} ${preview ? 'has-preview' : ''}`}
             >
               <input {...getInputProps()} />
-              <div className="dropzone-icon">📷</div>
-              <p>
-                {isDragActive
-                  ? 'Drop the image here...'
-                  : 'Drag & drop a waste image, or click to select'}
-              </p>
-              <p className="hint">Supports JPG, PNG, WebP</p>
+              {preview ? (
+                <div className="preview-container">
+                  <img src={preview} alt="Uploaded waste sample" className="modern-preview-img" />
+                  <div className="preview-overlay">
+                    <UploadCloud size={20} />
+                    <span>Click or drop new image to replace</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="dropzone-prompt">
+                  <div className="dropzone-icon-circle">
+                    <UploadCloud size={28} />
+                  </div>
+                  <div className="dropzone-headline">
+                    {isDragActive ? 'Release image to classify' : 'Click or drag & drop item image'}
+                  </div>
+                  <p className="dropzone-sub">
+                    Accepts PNG, JPG, JPEG, WEBP · Processed in real-time
+                  </p>
+                  <div className="dropzone-pill">
+                    <Cpu size={12} /> LargeNet Model Ready
+                  </div>
+                </div>
+              )}
             </div>
-            {preview && (
-              <img src={preview} alt="Preview" className="preview-image" />
-            )}
           </div>
         </div>
 
-        <div className="card">
+        {/* Right: Results Card */}
+        <div className="card classify-results-card">
           <div className="card-header">
-            <h3>🔍 Classification Result</h3>
+            <div className="card-header-titles">
+              <div className="card-badge badge-blue">Inference Engine</div>
+              <h3>Classification Telemetry</h3>
+            </div>
+            {result && (
+              <span className={`pill-counter ${isRecyclable(result.category) ? 'pill-success' : 'pill-neutral'}`}>
+                {isRecyclable(result.category) ? 'Recyclable Stream' : 'Special Processing'}
+              </span>
+            )}
           </div>
-          <div className="card-body classification-result">
+          
+          <div className="card-body">
             {loading && (
-              <div className="loading">
-                <div className="spinner"></div>
-                Classifying...
+              <div className="classify-loading-state">
+                <div className="modern-spinner"></div>
+                <h4>Analyzing Image Tensor...</h4>
+                <p>Passing through 7-layer convolutional neural network</p>
               </div>
             )}
+
             {error && (
-              <div className="alert-item critical">
-                <div className="alert-icon">❌</div>
-                <div className="alert-content">
-                  <div className="alert-message">{error}</div>
+              <div className="modern-alert alert-error">
+                <AlertCircle size={20} />
+                <div>
+                  <div className="alert-title">Inference Error</div>
+                  <div className="alert-desc">{error}</div>
                 </div>
               </div>
             )}
+
             {result && !loading && (
-              <>
-                <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-                  <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>
-                    {categoryIcons[result.category] || '❓'}
+              <div className="classify-result-content">
+                <div className="result-hero-box">
+                  <div className="result-icon-display">
+                    {categoryIcons[result.category] || '📦'}
                   </div>
-                  <div className="result-category">{result.category}</div>
-                  <div className="result-confidence">
-                    {(result.confidence * 100).toFixed(1)}% confidence
+                  <div className="result-hero-text">
+                    <div className="result-label-sub">Identified Material</div>
+                    <div className="result-hero-category">{result.category}</div>
+                    <div className="result-hero-meta">
+                      <span className="confidence-pill">
+                        {(result.confidence * 100).toFixed(1)}% Confidence
+                      </span>
+                      <span className="stream-pill">
+                        {isRecyclable(result.category) ? '♻️ Recyclable' : '⚠️ Non-Recyclable'}
+                      </span>
+                    </div>
                   </div>
                 </div>
-                <h4 style={{ color: 'var(--text-secondary)', marginBottom: '1rem', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                  All Probabilities
-                </h4>
-                <ul className="probabilities-list">
-                  {result.all_probabilities &&
-                    Object.entries(result.all_probabilities)
-                      .sort(([, a], [, b]) => b - a)
-                      .map(([cls, prob]) => (
-                        <li key={cls} className="probability-item">
-                          <span className="probability-label">{cls}</span>
-                          <div className="probability-bar-bg">
-                            <div
-                              className="probability-bar"
-                              style={{ width: `${prob * 100}%` }}
-                            />
-                          </div>
-                          <span className="probability-value">
-                            {(prob * 100).toFixed(1)}%
-                          </span>
-                        </li>
-                      ))}
-                </ul>
-              </>
+
+                <div className="probabilities-section">
+                  <div className="section-subtitle">
+                    <span>Softmax Probability Distribution</span>
+                  </div>
+                  <div className="probability-bars-grid">
+                    {result.all_probabilities &&
+                      Object.entries(result.all_probabilities)
+                        .sort(([, a], [, b]) => b - a)
+                        .map(([cls, prob]) => {
+                          const percent = (prob * 100).toFixed(1);
+                          const isTop = cls === result.category;
+                          return (
+                            <div key={cls} className={`prob-row ${isTop ? 'top-match' : ''}`}>
+                              <div className="prob-header">
+                                <span className="prob-name">
+                                  <span className="prob-emoji">{categoryIcons[cls] || '📦'}</span>
+                                  {cls}
+                                </span>
+                                <span className="prob-num">{percent}%</span>
+                              </div>
+                              <div className="prob-track">
+                                <div 
+                                  className={`prob-fill ${isTop ? 'fill-winner' : ''}`}
+                                  style={{ width: `${percent}%` }}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
+                  </div>
+                </div>
+              </div>
             )}
+
             {!result && !loading && !error && (
-              <div className="empty-state">
-                <p style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🤖</p>
-                <p>Upload an image to see classification results</p>
+              <div className="classify-empty-state">
+                <div className="empty-graphic-block">
+                  <FileImage size={40} className="empty-graphic-icon" />
+                </div>
+                <h4>Awaiting Material Input</h4>
+                <p>Drag an image into the upload bay on the left to extract real-time AI classification metrics.</p>
               </div>
             )}
           </div>

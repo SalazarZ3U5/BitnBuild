@@ -1,10 +1,13 @@
-/* Reset default Vite styles — our App.css handles everything */
 :root {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  color-scheme: dark;
+  font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color-scheme: light;
 }
 
 body {
   margin: 0;
   padding: 0;
+  background-color: #f8fafc;
+  color: #0f172a;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
