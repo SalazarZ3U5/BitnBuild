@@ -85,7 +85,7 @@ function DeltaBadge({ current, predicted }) {
   );
 }
 
-export default function FillForecastPanel({ onHeatmapData, onHeatmapModeChange, heatmapMode }) {
+export default function FillForecastPanel({ onHeatmapData, onHeatmapModeChange, heatmapMode, onRoutesPlanned }) {
   const [hoursAhead, setHoursAhead]   = useState(12);
   const [loading, setLoading]         = useState(false);
   const [data, setData]               = useState(null);
@@ -148,12 +148,17 @@ export default function FillForecastPanel({ onHeatmapData, onHeatmapModeChange, 
     try {
       const res = await api.get(`/routes/predictive?dispatch_at_hours=${hoursAhead}`);
       setPredRoutes(res.data);
-    } catch {
-      // silently fail
+      const planned = res.data.routes || [];
+      if (onRoutesPlanned && planned.length > 0) {
+        onRoutesPlanned(planned, hoursAhead);
+      }
+    } catch (err) {
+      console.error('Failed to plan predictive routes:', err);
     } finally {
       setRouteLoading(false);
     }
   };
+
 
   // Sorted bin list
   const sortedBins = data ? [...data.predictions].sort((a, b) => {

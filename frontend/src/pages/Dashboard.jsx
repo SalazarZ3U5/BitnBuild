@@ -401,7 +401,18 @@ function Dashboard() {
     setHeatmapHoursAhead(hoursAhead);
   }, []);
 
+  const handleRoutesPlanned = useCallback((plannedRoutes, hoursAhead) => {
+    setRoutes(plannedRoutes);
+    showSimToast(`Collection routes planned for T+${hoursAhead}h (${plannedRoutes.length} vehicles dispatched)`);
+    // Smoothly scroll to map so operator sees active routes immediately
+    const mapEl = document.querySelector('.dashboard-grid');
+    if (mapEl) {
+      mapEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, []);
+
   // ── Computed stats ────────────────────────────────────────────────────────
+
 
   const totalBins = bins.length;
   const criticalBins = bins.filter(b => b.current_fill_percent > 80).length;
@@ -891,8 +902,10 @@ function Dashboard() {
           onHeatmapData={handleHeatmapData}
           onHeatmapModeChange={setHeatmapMode}
           heatmapMode={heatmapMode}
+          onRoutesPlanned={handleRoutesPlanned}
         />
       </div>
+
 
 
       {/* Alerts + Charts Section */}

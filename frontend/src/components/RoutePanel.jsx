@@ -43,11 +43,17 @@ function RoutePanel({ routes, loading }) {
                   style={{ backgroundColor: themeColor }}
                 />
                 <span className="route-vehicle-name">{route.vehicle_name}</span>
+                {route.is_predictive && (
+                  <span style={{ fontSize: '10px', color: '#2563eb', background: '#eff6ff', padding: '1px 6px', borderRadius: '10px', fontWeight: '600', marginLeft: '6px', border: '1px solid #bfdbfe' }}>
+                    T+{route.hours_ahead}h Plan
+                  </span>
+                )}
               </div>
               <div className="route-metrics-tag">
                 <Navigation size={12} />
                 <span>{route.total_distance_km} km</span>
               </div>
+
             </div>
 
             <div className="route-stops-timeline">
