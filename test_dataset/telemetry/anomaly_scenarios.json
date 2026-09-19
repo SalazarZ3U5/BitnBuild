@@ -1,0 +1,445 @@
+[
+  {
+    "scenario_id": "SCENARIO_RAPID_SPIKE",
+    "title": "Commercial Market Sudden Fill Surge",
+    "target_bin": "AMC-BIN-03 (Manek Chowk Heritage Market)",
+    "description": "Bin fill level escalates from 32% to 94% within 1.5 hours during festive evening hours.",
+    "expected_detector_flag": "CRITICAL_OVERFLOW_SPIKE",
+    "test_series": [
+      {
+        "t_minus_hours": 3,
+        "fill": 32.0,
+        "temp": 32.5
+      },
+      {
+        "t_minus_hours": 2,
+        "fill": 48.5,
+        "temp": 32.8
+      },
+      {
+        "t_minus_hours": 1,
+        "fill": 78.0,
+        "temp": 33.1
+      },
+      {
+        "t_minus_hours": 0,
+        "fill": 94.2,
+        "temp": 33.5
+      }
+    ]
+  },
+  {
+    "scenario_id": "SCENARIO_SENSOR_DRIFT_FLATLINE",
+    "title": "Ultrasonic Transducer Obstruction / Flatline",
+    "target_bin": "AMC-BIN-07 (Science City Main Entrance)",
+    "description": "Sensor output remains locked at exactly 64.00% without Gaussian noise for 72 consecutive hours.",
+    "expected_detector_flag": "HARDWARE_SENSOR_FROZEN",
+    "test_series": [
+      {
+        "hour": 0,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 1,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 2,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 3,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 4,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 5,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 6,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 7,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 8,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 9,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 10,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 11,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 12,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 13,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 14,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 15,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 16,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 17,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 18,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 19,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 20,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 21,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 22,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 23,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 24,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 25,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 26,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 27,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 28,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 29,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 30,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 31,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 32,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 33,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 34,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 35,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 36,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 37,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 38,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 39,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 40,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 41,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 42,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 43,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 44,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 45,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 46,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 47,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 48,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 49,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 50,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 51,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 52,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 53,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 54,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 55,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 56,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 57,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 58,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 59,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 60,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 61,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 62,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 63,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 64,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 65,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 66,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 67,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 68,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 69,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 70,
+        "fill": 64.0,
+        "variance": 0.0
+      },
+      {
+        "hour": 71,
+        "fill": 64.0,
+        "variance": 0.0
+      }
+    ]
+  },
+  {
+    "scenario_id": "SCENARIO_HIGH_TILT_VANDALISM",
+    "title": "Physical Bin Displacement / Tip-Over",
+    "target_bin": "AMC-BIN-01 (Sabarmati Riverfront Promenade)",
+    "description": "Tilt angle abruptly shifts from 0.8\u00b0 to 47.5\u00b0, indicating bin overturned or knocked down.",
+    "expected_detector_flag": "PHYSICAL_ANOMALY_TILT",
+    "test_series": [
+      {
+        "minute": -10,
+        "tilt_deg": 0.9,
+        "fill": 41.0
+      },
+      {
+        "minute": -5,
+        "tilt_deg": 1.1,
+        "fill": 41.5
+      },
+      {
+        "minute": 0,
+        "tilt_deg": 47.5,
+        "fill": 12.0
+      }
+    ]
+  },
+  {
+    "scenario_id": "SCENARIO_THERMAL_ANOMALY",
+    "title": "Subsurface Thermal Event / Fire Risk",
+    "target_bin": "AMC-BIN-04 (Law Garden Night Market)",
+    "description": "Internal temperature spikes above 62\u00b0C while ambient temperature remains 33\u00b0C.",
+    "expected_detector_flag": "THERMAL_FIRE_HAZARD",
+    "test_series": [
+      {
+        "minute": -30,
+        "temp_c": 34.0
+      },
+      {
+        "minute": -15,
+        "temp_c": 46.5
+      },
+      {
+        "minute": 0,
+        "temp_c": 64.2
+      }
+    ]
+  }
+]
