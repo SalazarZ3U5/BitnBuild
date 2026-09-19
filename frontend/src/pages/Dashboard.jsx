@@ -683,16 +683,16 @@ function Dashboard() {
             <div className="sim-status-meta">
               <div className="sim-status-header">
                 <span className="sim-status-title">
-                  {collectionActive ? `Fleet Dispatched — ${activeTrucks} Trucks Active` : 
-                   allCritical ? '⚠ All Bins Critical — Paused' :
-                   simRunning ? 'Live Stream Active' : 'Simulation Replay Ready'}
+                   {collectionActive ? `Fleet Dispatched — ${activeTrucks} Trucks Active` : 
+                    allCritical ? '⚠ All Bins Critical — Paused' :
+                    simRunning ? 'Live Stream Active' : 'Simulation Ready'}
                 </span>
                 <span className="sim-step-badge">Step #{simStep}</span>
               </div>
               <span className="sim-status-subtitle">
                 {collectionActive ? `A* optimized collection — ${totalStopsDone}/${totalPlannedStops || 40} stops completed` :
                  allCritical ? 'Auto-paused: all bins ≥80% capacity' :
-                 simRunning ? 'Looping +1h step every 3s' : 'Replay engine idle (tick on demand)'}
+                 simRunning ? 'Looping +1h step every 3s' : 'Simulation idle (tick on demand)'}
               </span>
             </div>
           </div>
@@ -705,13 +705,13 @@ function Dashboard() {
               title={simRunning ? "Pause automated stream" : "Start automated stream"}
             >
               {simRunning ? <Pause size={14} /> : <Play size={14} />}
-              <span>{simRunning ? 'Pause Stream' : 'Live Replay'}</span>
+              <span>{simRunning ? 'Pause Stream' : 'Start Sim'}</span>
             </button>
 
             <button 
               className="sim-btn sim-btn-step"
               onClick={handleManualTick}
-              disabled={simLoading || simRunning || collectionActive}
+              disabled={simLoading || collectionActive}
               title="Advance telemetry by +1 hour"
             >
               <SkipForward size={14} />
