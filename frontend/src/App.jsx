@@ -19,6 +19,7 @@ import ClassifyPage from './pages/ClassifyPage';
 import FleetTrackingPage from './pages/FleetTrackingPage';
 import NotificationsPage from './pages/NotificationsPage';
 import ForecastPage from './pages/ForecastPage';
+import RecyclingPage from './pages/RecyclingPage';
 import RealtimeNotifBar from './components/RealtimeNotifBar';
 import './App.css';
 
@@ -86,9 +87,9 @@ function App() {
                 </NavLink>
               </li>
               <li>
-                <NavLink to="/notifications" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'} title="Notifications">
-                  <Bell size={19} className="nav-icon" />
-                  {!collapsed && <span>Notifications</span>}
+                <NavLink to="/recycling" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'} title="Recycling Directives">
+                  <Recycle size={19} className="nav-icon" />
+                  {!collapsed && <span>Recycling Directives</span>}
                 </NavLink>
               </li>
               <li>
@@ -101,6 +102,12 @@ function App() {
                 <NavLink to="/analytics" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'} title="Analytics & Trends">
                   <BarChart3 size={19} className="nav-icon" />
                   {!collapsed && <span>Analytics & Trends</span>}
+                </NavLink>
+              </li>
+              <li>
+                <NavLink to="/notifications" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'} title="Notifications">
+                  <Bell size={19} className="nav-icon" />
+                  {!collapsed && <span>Notifications</span>}
                 </NavLink>
               </li>
             </ul>
@@ -138,9 +145,10 @@ function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/fleet" element={<FleetTrackingPage />} />
             <Route path="/forecast" element={<ForecastPage />} />
-            <Route path="/notifications" element={<NotificationsPage />} />
+            <Route path="/recycling" element={<RecyclingPage />} />
             <Route path="/classify" element={<ClassifyPage />} />
             <Route path="/analytics" element={<AnalyticsPage />} />
+            <Route path="/notifications" element={<NotificationsPage />} />
           </Routes>
         </main>
       </div>

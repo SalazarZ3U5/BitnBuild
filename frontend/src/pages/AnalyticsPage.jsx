@@ -18,7 +18,6 @@ import {
   Zap
 } from 'lucide-react';
 import api from '../api';
-import RecyclingSuggestionsPanel from '../components/RecyclingSuggestionsPanel';
 
 const PALETTE = ['#2563eb', '#10b981', '#f59e0b', '#8b5cf6', '#f43f5e', '#06b6d4'];
 
@@ -439,8 +438,6 @@ function AnalyticsPage() {
         </div>
       )}
 
-      {/* Row 4: AI Recycling Suggestions */}
-      <RecyclingSuggestionsPanel />
     </div>
   );
 }
