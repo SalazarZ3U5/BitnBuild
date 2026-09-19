@@ -295,7 +295,7 @@ function TruckMarker({ truck, onSelectTruck }) {
   );
 }
 
-function BinMap({ bins, routes, truckStates = [], collectionActive, totalWasteCollected = 0, heatmapData = [], heatmapMode = false, heatmapHoursAhead = 0, onSelectTruck, hotspotBinIds = new Set() }) {
+function BinMap({ bins, routes, truckStates = [], collectionActive, totalWasteCollected = 0, heatmapData = [], heatmapMode = false, heatmapHoursAhead = 0, onSelectTruck, hotspotBinIds = new Set(), highlightRouteIndex = null }) {
   const center = [23.0225, 72.5714];
 
   // Derive collected bin names from all trucks
@@ -421,9 +421,13 @@ function BinMap({ bins, routes, truckStates = [], collectionActive, totalWasteCo
           );
         })}
 
-        {/* Road-snapped & Bridge-Aware Route Polylines */}
         {routes.map((route, idx) => {
           const color = ROUTE_COLORS[idx % ROUTE_COLORS.length];
+          const isHighlighted = highlightRouteIndex === null || highlightRouteIndex === idx;
+          const glowWeight = isHighlighted ? (highlightRouteIndex === idx ? 12 : 7) : 4;
+          const glowOpacity = isHighlighted ? (highlightRouteIndex === idx ? 0.45 : 0.3) : 0.08;
+          const coreWeight = isHighlighted ? (highlightRouteIndex === idx ? 5 : 3.5) : 2;
+          const coreOpacity = isHighlighted ? (highlightRouteIndex === idx ? 1 : 0.92) : 0.2;
           let positions = [];
 
           if (route.geometry && Array.isArray(route.geometry) && route.geometry.length > 1) {
@@ -470,15 +474,15 @@ function BinMap({ bins, routes, truckStates = [], collectionActive, totalWasteCo
               <Polyline
                 positions={positions}
                 color={color}
-                weight={7}
-                opacity={0.3}
+                weight={glowWeight}
+                opacity={glowOpacity}
               />
               {/* Core road line following street network & bridges */}
               <Polyline
                 positions={positions}
                 color={color}
-                weight={3.5}
-                opacity={0.92}
+                weight={coreWeight}
+                opacity={coreOpacity}
                 dashArray={route.geometry ? undefined : "6 4"}
               />
             </Fragment>

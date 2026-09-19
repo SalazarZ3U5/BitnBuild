@@ -7382,3 +7382,158 @@ body {
   color: var(--ink-muted);
   font-weight: 500;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Route Map Preview Modal (AI Forecast Page)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.route-map-modal {
+  background: #ffffff;
+  border-radius: 18px;
+  width: 94vw;
+  max-width: 1280px;
+  height: 88vh;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 32px 64px -16px rgba(15, 23, 42, 0.3),
+              0 0 0 1px rgba(15, 23, 42, 0.06);
+  overflow: hidden;
+  animation: modalScaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.rmm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border-subtle, #e2e8f0);
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  flex-shrink: 0;
+}
+
+.rmm-header-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.rmm-icon-pod {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.rmm-header-text h3 {
+  font-size: 1.05rem;
+  font-weight: 750;
+  color: var(--ink-primary, #0f172a);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.rmm-subtitle {
+  font-size: 0.78rem;
+  color: var(--ink-muted, #64748b);
+  font-weight: 500;
+  margin-top: 2px;
+  display: block;
+}
+
+.rmm-close-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--border-subtle, #e2e8f0);
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--ink-secondary, #475569);
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.rmm-close-btn:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #ef4444;
+  transform: scale(1.05);
+}
+
+.rmm-route-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 22px;
+  border-bottom: 1px solid var(--border-subtle, #e2e8f0);
+  background: #fafbfd;
+  flex-shrink: 0;
+}
+
+.rmm-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1.5px solid;
+  background: #ffffff;
+  font-size: 0.76rem;
+  font-weight: 600;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  cursor: pointer;
+  user-select: none;
+}
+
+.rmm-chip:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+}
+
+.rmm-chip-active {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  transform: translateY(-1px) scale(1.03);
+}
+
+.rmm-chip-active .rmm-chip-meta {
+  opacity: 0.85;
+}
+
+.rmm-chip-name {
+  font-weight: 700;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rmm-chip-meta {
+  font-weight: 500;
+  opacity: 0.7;
+  font-size: 0.7rem;
+}
+
+.rmm-map-container {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+
+.rmm-map-container .map-container-wrapper {
+  height: 100% !important;
+}
+
+.rmm-map-container .leaflet-container {
+  height: 100% !important;
+  border-radius: 0 0 18px 18px;
+}

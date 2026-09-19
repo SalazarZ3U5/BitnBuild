@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useDropzone } from 'react-dropzone';
 import { 
   UploadCloud, 
@@ -14,6 +15,7 @@ import {
 import api from '../api';
 
 function ClassifyPage() {
+  const navigate = useNavigate();
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState(null);
   const [result, setResult] = useState(null);
@@ -79,6 +81,15 @@ function ClassifyPage() {
           <p className="editorial-subtitle">
             Upload waste item imagery to instantly infer material category and sorting stream via on-device PyTorch ResNet-18 (ImageNet pretrained).
           </p>
+        </div>
+        <div className="header-actions">
+          <button 
+            className="btn btn-secondary" 
+            onClick={() => navigate('/')}
+            title="Return to Dashboard"
+          >
+            <span>← Back to Dashboard</span>
+          </button>
         </div>
       </div>
 

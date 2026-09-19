@@ -112,10 +112,15 @@ export default function FillForecastPanel({ onHeatmapData, onHeatmapModeChange, 
             bin_id: p.bin_id,
             bin_name: p.bin_name,
             predicted_fill_percent: p.predicted_fill_percent,
+            fill_percent: p.predicted_fill_percent,
+            predicted_fill: p.predicted_fill_percent,
             current_fill_percent: p.current_fill_percent,
+            delta_percent: p.delta_percent,
             hours_until_overflow: p.hours_until_overflow,
             collection_urgency: p.collection_urgency,
             will_overflow_before: p.will_overflow_before,
+            confidence_lower: p.confidence_lower,
+            confidence_upper: p.confidence_upper,
             zone: p.zone,
             waste_type: p.waste_type,
           })),
@@ -279,7 +284,7 @@ export default function FillForecastPanel({ onHeatmapData, onHeatmapModeChange, 
             </span>
             <div className="ffp-pred-routes-chips">
               {predRoutes.routes?.map((r, i) => (
-                <span key={i} className="ffp-pred-route-chip" style={{ borderColor: ['#2563eb','#8b5cf6','#f59e0b','#06b6d4'][i % 4], color: ['#2563eb','#8b5cf6','#f59e0b','#06b6d4'][i % 4] }}>
+                <span key={i} className="ffp-pred-route-chip" style={{ borderColor: ['#2563eb','#8b5cf6','#f59e0b','#f43f5e','#06b6d4','#10b981'][i % 6], color: ['#2563eb','#8b5cf6','#f59e0b','#f43f5e','#06b6d4','#10b981'][i % 6] }}>
                   {r.vehicle_name} · {r.stops?.length} stops · {r.total_distance_km} km
                 </span>
               ))}
