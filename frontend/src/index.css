@@ -1,0 +1,10 @@
+/* Reset default Vite styles — our App.css handles everything */
+:root {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+}

@@ -1,0 +1,37 @@
+{
+  "architecture": "LargeNet",
+  "num_classes": 7,
+  "input_size": [
+    128,
+    128
+  ],
+  "input_channels": 3,
+  "class_names": [
+    "battery",
+    "biological",
+    "cardboard",
+    "glass",
+    "metal",
+    "paper",
+    "plastic"
+  ],
+  "normalization": {
+    "mean": [
+      0.5,
+      0.5,
+      0.5
+    ],
+    "std": [
+      0.5,
+      0.5,
+      0.5
+    ]
+  },
+  "training_params": {
+    "batch_size": 64,
+    "learning_rate": 0.01,
+    "best_epoch": 61,
+    "optimizer": "SGD",
+    "loss_function": "CrossEntropyLoss"
+  }
+}
