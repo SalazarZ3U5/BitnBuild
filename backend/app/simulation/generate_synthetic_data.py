@@ -72,7 +72,7 @@ def generate_fill_readings(db: Session, bins: list[Bin], days: int = 60):
     start = now - datetime.timedelta(days=days)
     readings_batch = []
 
-    for bin_obj in bins:
+    for idx, bin_obj in enumerate(bins):
         fill = random.uniform(0, 10)  # Start fill
         daily_rate = random.uniform(2, 8)  # % per day rise
         hourly_rate = daily_rate / 24.0
@@ -80,19 +80,33 @@ def generate_fill_readings(db: Session, bins: list[Bin], days: int = 60):
         collection_interval_hours = random.randint(3, 7) * 24
         hours_since_collection = 0
 
+        # Define target final fill band for realistic demonstration:
+        # ~20% of bins critical (82-96%), ~35% warning (52-78%), ~45% normal (15-48%)
+        if idx < 8:
+            target_final_fill = random.uniform(82, 96)
+        elif idx < 22:
+            target_final_fill = random.uniform(52, 78)
+        else:
+            target_final_fill = random.uniform(15, 48)
+
         current_time = start
         while current_time <= now:
-            # Add noise
-            noise = random.gauss(0, 0.5)
+            noise = random.gauss(0, 0.4)
             fill += hourly_rate + noise
             fill = max(0, min(fill, 100))
             hours_since_collection += 1
 
-            # Collection event
-            if hours_since_collection >= collection_interval_hours and fill > 50:
-                fill = random.uniform(0, 10)
-                hours_since_collection = 0
-                collection_interval_hours = random.randint(3, 7) * 24
+            # Last 48 hours: smoothly guide toward target final fill
+            hours_remaining = (now - current_time).total_seconds() / 3600.0
+            if hours_remaining <= 48:
+                # Do not trigger a reset in final 48h, blend towards target
+                fill += (target_final_fill - fill) * 0.08
+            else:
+                # Normal historical sawtooth collection event
+                if hours_since_collection >= collection_interval_hours and fill > 50:
+                    fill = random.uniform(0, 10)
+                    hours_since_collection = 0
+                    collection_interval_hours = random.randint(3, 7) * 24
 
             readings_batch.append(FillReading(
                 bin_id=bin_obj.id,

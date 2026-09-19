@@ -49,7 +49,7 @@ def _try_osrm_distance_matrix(locations: list[tuple[float, float]]) -> list[list
     url = f"https://router.project-osrm.org/table/v1/driving/{coords}?annotations=distance"
 
     try:
-        with httpx.Client(timeout=10) as client:
+        with httpx.Client(timeout=1.5) as client:
             resp = client.get(url)
             if resp.status_code == 200:
                 data = resp.json()
@@ -80,10 +80,19 @@ def optimize_routes(db: Session, fill_threshold: float = 60.0) -> dict:
         .all()
     )
 
+    # Fallback: if fewer than 4 bins meet the threshold, take top highest filled bins
+    if len(bins) < 4:
+        bins = (
+            db.query(Bin)
+            .order_by(Bin.current_fill_percent.desc())
+            .limit(16)
+            .all()
+        )
+
     vehicles = db.query(Vehicle).filter(Vehicle.is_active == True).all()
 
     if not bins:
-        return {"message": "No bins above threshold", "routes": []}
+        return {"message": "No bins found in database", "routes": []}
     if not vehicles:
         return {"message": "No active vehicles", "routes": []}
 
@@ -138,6 +147,11 @@ def optimize_routes(db: Session, fill_threshold: float = 60.0) -> dict:
         "Capacity",
     )
 
+    # Add disjunctions so OR-Tools can drop bins if total demand exceeds vehicle capacity
+    penalty = 500000
+    for node in range(1, n):
+        routing.AddDisjunction([manager.NodeToIndex(node)], penalty)
+
     # Search parameters
     search_params = pywrapcp.DefaultRoutingSearchParameters()
     search_params.first_solution_strategy = (
@@ -146,7 +160,7 @@ def optimize_routes(db: Session, fill_threshold: float = 60.0) -> dict:
     search_params.local_search_metaheuristic = (
         routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH
     )
-    search_params.time_limit.FromSeconds(5)
+    search_params.time_limit.FromSeconds(1)
 
     solution = routing.SolveWithParameters(search_params)
 

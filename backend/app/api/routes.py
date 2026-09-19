@@ -12,7 +12,7 @@ router = APIRouter(tags=["routes"])
 
 @router.get("/routes/today")
 def get_today_routes(
-    fill_threshold: float = Query(60.0, description="Minimum fill % to include a bin"),
+    fill_threshold: float = Query(50.0, description="Minimum fill % to include a bin"),
     db: Session = Depends(get_db),
 ):
     """
