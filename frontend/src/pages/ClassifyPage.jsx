@@ -71,13 +71,13 @@ function ClassifyPage() {
         <div className="header-left">
           <div className="header-category-badge">
             <Sparkles size={13} />
-            Computer Vision Inference · 128×128 RGB
+            Computer Vision Inference · ResNet-18 · 224×224 RGB
           </div>
           <h1 className="editorial-title">
             Visual <em>intelligence</em> for waste classification
           </h1>
           <p className="editorial-subtitle">
-            Upload waste item imagery to instantly infer material category and sorting stream via on-device PyTorch LargeNet CNN.
+            Upload waste item imagery to instantly infer material category and sorting stream via on-device PyTorch ResNet-18 (ImageNet pretrained).
           </p>
         </div>
       </div>
@@ -129,7 +129,7 @@ function ClassifyPage() {
                     Accepts PNG, JPG, JPEG, WEBP · Processed in real-time
                   </p>
                   <div className="dropzone-pill">
-                    <Cpu size={12} /> LargeNet Model Ready
+                    <Cpu size={12} /> ResNet-18 Model Ready
                   </div>
                 </div>
               )}
@@ -156,7 +156,7 @@ function ClassifyPage() {
               <div className="classify-loading-state">
                 <div className="modern-spinner"></div>
                 <h4>Analyzing Image Tensor...</h4>
-                <p>Passing through 7-layer convolutional neural network</p>
+                <p>Running ResNet-18 deep residual network inference</p>
               </div>
             )}
 

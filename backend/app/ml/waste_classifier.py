@@ -1,16 +1,28 @@
 """
-Waste image classifier — wraps the LargeNet model from backend/models/waste_classifier/.
+Waste image classifier — uses a pretrained ResNet-18 backbone (ImageNet weights)
+with a fine-tuned 7-class head for waste category prediction.
 Maps the model's 7 output classes to 6 project categories.
 """
 import io
 import os
-import json
 import torch
+import torch.nn as nn
 from PIL import Image
-from torchvision import transforms
+from torchvision import transforms, models
 
 # Singleton instance
 _classifier = None
+
+# The 7 waste class names (matches original training label order)
+CLASS_NAMES = [
+    "battery",
+    "biological",
+    "cardboard",
+    "glass",
+    "metal",
+    "paper",
+    "plastic",
+]
 
 # Mapping from model's 7 classes to project's 6 categories
 MODEL_TO_PROJECT_CATEGORY = {
@@ -29,35 +41,57 @@ MODEL_DIR = os.path.join(
     "waste_classifier",
 )
 
+# Path to fine-tuned ResNet-18 weights (if available); falls back to ImageNet pretrained
+RESNET_WEIGHTS_PATH = os.path.join(MODEL_DIR, "resnet18_waste.pth")
+
+
+def build_resnet18(num_classes: int = 7, pretrained: bool = True) -> nn.Module:
+    """
+    Build a ResNet-18 model with a replaced final FC layer for num_classes outputs.
+    Uses pretrained ImageNet weights for the backbone.
+    """
+    weights = models.ResNet18_Weights.IMAGENET1K_V1 if pretrained else None
+    model = models.resnet18(weights=weights)
+    # Replace the final fully-connected layer to output num_classes
+    in_features = model.fc.in_features
+    model.fc = nn.Linear(in_features, num_classes)
+    return model
+
 
 class WasteClassifier:
-    """Loads the LargeNet model once and provides a classify(image_bytes) method."""
+    """
+    Loads a ResNet-18 model and provides a classify(image_bytes) method.
 
-    def __init__(self, model_dir: str = MODEL_DIR):
-        # Load config
-        config_path = os.path.join(model_dir, "config.json")
-        with open(config_path, "r") as f:
-            self.config = json.load(f)
+    - Backbone: ResNet-18 pretrained on ImageNet (torchvision)
+    - Head: Linear(512 → 7) for waste category classification
+    - If a fine-tuned checkpoint exists at models/waste_classifier/resnet18_waste.pth,
+      it will be loaded automatically; otherwise ImageNet pretrained weights are used.
+    """
 
-        # Use CPU: 1.1MB model runs in <5ms on CPU and avoids CUDA version mismatches
+    def __init__(self):
         self.device = torch.device("cpu")
-        self.class_names = self.config["class_names"]
+        self.class_names = CLASS_NAMES
 
-        # Load model architecture + weights
-        import sys
-        sys.path.insert(0, model_dir)
-        from model import load_model  # noqa: E402
-        model_path = os.path.join(model_dir, "pytorch_model.bin")
-        self.model = load_model(model_path, self.device)
+        # Build ResNet-18 with 7-class head
+        self.model = build_resnet18(num_classes=len(CLASS_NAMES), pretrained=True)
 
-        # Build transform pipeline
-        mean = self.config["normalization"]["mean"]
-        std = self.config["normalization"]["std"]
-        size = tuple(self.config["input_size"])  # (128, 128)
+        # Load fine-tuned weights if they exist
+        if os.path.exists(RESNET_WEIGHTS_PATH):
+            state_dict = torch.load(RESNET_WEIGHTS_PATH, map_location=self.device)
+            self.model.load_state_dict(state_dict)
+
+        self.model.to(self.device)
+        self.model.eval()
+
+        # ResNet-18 standard transform: 224×224, ImageNet normalization
         self.transform = transforms.Compose([
-            transforms.Resize(size),
+            transforms.Resize(256),
+            transforms.CenterCrop(224),
             transforms.ToTensor(),
-            transforms.Normalize(mean, std),
+            transforms.Normalize(
+                mean=[0.485, 0.456, 0.406],
+                std=[0.229, 0.224, 0.225],
+            ),
         ])
 
     def classify(self, image_bytes: bytes) -> dict:
@@ -66,7 +100,7 @@ class WasteClassifier:
 
         Returns:
             {"category": str, "confidence": float, "model_class": str,
-             "all_probabilities": dict}
+             "all_probabilities": dict, "model_name": str}
         """
         image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
         tensor = self.transform(image).unsqueeze(0).to(self.device)
@@ -90,6 +124,7 @@ class WasteClassifier:
             "confidence": conf,
             "model_class": model_class,
             "all_probabilities": all_probs,
+            "model_name": "ResNet-18",
         }
 
 
