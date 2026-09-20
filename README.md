@@ -400,37 +400,6 @@ On the dedicated [AI Forecast Page](file:///d:/Kavin/programming/Hackathons/BitN
 
 ---
 
-## ◈ Automated Testing
-
-Execute unit and integration tests covering priority ranking, distance matrices, bridge routing, and geometry generation:
-
-```bash
-# From workspace root
-cd backend
-python -m pytest tests/ -v
-```
-
-```
-============================= test session starts =============================
-backend/tests/test_prioritizer.py::test_higher_fill_gets_higher_priority       PASSED
-backend/tests/test_prioritizer.py::test_high_overflow_urgency                  PASSED
-backend/tests/test_prioritizer.py::test_waste_type_weights                     PASSED
-backend/tests/test_prioritizer.py::test_empty_bins_list                         PASSED
-backend/tests/test_route_optimizer.py::test_haversine_distance                 PASSED
-backend/tests/test_route_optimizer.py::test_haversine_same_point               PASSED
-backend/tests/test_route_optimizer.py::test_build_distance_matrix              PASSED
-backend/tests/test_route_optimizer.py::test_fallback_round_robin               PASSED
-backend/tests/test_route_optimizer.py::test_optimize_routes_no_bins            PASSED
-backend/tests/test_route_optimizer.py::test_distance_penalizes_cross_city_gap PASSED
-backend/tests/test_route_optimizer.py::test_route_geometry_includes_coordinates PASSED
-backend/tests/test_route_optimizer.py::test_cluster_bins_separates_river_banks PASSED
-============================== 12 passed in 3.09s ==============================
-```
-
-<br/>
-
----
-
 ## ◈ Tech Stack & Dependencies
 
 ```
