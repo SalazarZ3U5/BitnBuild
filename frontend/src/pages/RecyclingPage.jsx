@@ -264,40 +264,42 @@ function DirectiveCard({ s, onClick }) {
   return (
     <div 
       className="directive-card-clickable" 
-      style={{ borderLeft: `4px solid ${cfg.color}` }}
       onClick={() => onClick(s)}
       title="Click to view interactive zone map and 3 efficient recycling methods"
     >
-      <div className="suggestion-top-row">
-        <div className="suggestion-icon-wrap" style={{ color: cfg.color, background: cfg.bg }}>
-          {TYPE_ICONS[s.type] || <ShieldCheck size={16} />}
+      <div className="kpi-card-glow-bg" style={{ background: cfg.color, opacity: 0.12 }}></div>
+      <div className="directive-card-inner">
+        <div className="suggestion-top-row">
+          <div className="suggestion-icon-wrap" style={{ color: cfg.color, background: cfg.bg }}>
+            {TYPE_ICONS[s.type] || <ShieldCheck size={16} />}
+          </div>
+          <div className="suggestion-meta">
+            <span className="suggestion-zone-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+              <MapPin size={11} /> {s.zone}
+            </span>
+            <span className="suggestion-category-tag">{s.category}</span>
+            <span className="suggestion-priority-pill" style={{ background: cfg.bg, color: cfg.color, borderColor: `${cfg.color}33` }}>
+              <span className="priority-dot" style={{ background: cfg.dot }} />
+              {cfg.label}
+            </span>
+          </div>
+          <span className="suggestion-metric-chip">{s.metric}</span>
         </div>
-        <div className="suggestion-meta">
-          <span className="suggestion-zone-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-            <MapPin size={11} /> {s.zone}
-          </span>
-          <span className="suggestion-category-tag">{s.category}</span>
-          <span className="suggestion-priority-pill" style={{ background: cfg.bg, color: cfg.color }}>
-            <span className="priority-dot" style={{ background: cfg.dot }} />
-            {cfg.label}
-          </span>
-        </div>
-        <span className="suggestion-metric-chip">{s.metric}</span>
-      </div>
 
-      <div className="suggestion-action-text">
-        <span className="suggestion-emoji">{s.icon}</span>
-        {s.action}
-      </div>
-
-      <div className="directive-bottom-action-row">
-        <div className="suggestion-impact-row">
-          <ArrowUpRight size={13} style={{ color: '#10b981' }} />
-          <span className="suggestion-impact-text">{s.impact_estimate}</span>
+        <div className="suggestion-action-text">
+          <span className="suggestion-emoji">{s.icon}</span>
+          {s.action}
         </div>
-        <div className="directive-explore-pill">
-          <span>Explore Zone Map &amp; 3 Recycling Methods</span>
-          <ChevronRight size={14} />
+
+        <div className="directive-bottom-action-row">
+          <div className="suggestion-impact-row">
+            <ArrowUpRight size={13} style={{ color: '#10b981' }} />
+            <span className="suggestion-impact-text">{s.impact_estimate}</span>
+          </div>
+          <div className="directive-explore-pill">
+            <span>Explore Zone Map &amp; 3 Recycling Methods</span>
+            <ChevronRight size={14} />
+          </div>
         </div>
       </div>
     </div>
@@ -319,58 +321,62 @@ function DirectiveModal({ directive, bins, onClose }) {
 
   // Filter bins associated with this directive's zone
   const zoneBins = useMemo(() => {
-    if (!bins || bins.length === 0) return [];
-    if (directive.zone === 'All Zones') return bins;
-    return bins.filter(b => 
-      b.zone === directive.zone || 
-      directive.zone.includes(b.zone) || 
-      b.zone.includes(directive.zone)
-    );
-  }, [bins, directive]);
+    if (!directive || !bins || bins.length === 0) return [];
+    return bins.filter(b => {
+      if (!b.zone) return false;
+      const bZone = b.zone.toLowerCase();
+      const dZone = (directive.zone || '').toLowerCase();
+      return bZone.includes(dZone) || dZone.includes(bZone);
+    });
+  }, [directive, bins]);
 
-  // Calculate center of filtered zone bins
-  const zoneCenter = useMemo(() => {
-    if (zoneBins.length === 0) return [23.0225, 72.5714]; // AMC Central default
-    const avgLat = zoneBins.reduce((acc, b) => acc + b.lat, 0) / zoneBins.length;
-    const avgLng = zoneBins.reduce((acc, b) => acc + b.lng, 0) / zoneBins.length;
-    return [avgLat, avgLng];
+  // Priority styling configuration
+  const cfg = PRIORITY_CONFIG[directive?.priority] || PRIORITY_CONFIG.low;
+
+  // Retrieve 3 deep-dive engineering recycling methods for this category
+  const methods = getMethodsForCategory(directive?.category);
+
+  // Derive zone centroid for Leaflet camera re-centering
+  const mapCenter = useMemo(() => {
+    if (zoneBins.length === 0) return [23.0225, 72.5714]; // Central Ahmedabad fallback
+    const sumLat = zoneBins.reduce((acc, b) => acc + b.lat, 0);
+    const sumLng = zoneBins.reduce((acc, b) => acc + b.lng, 0);
+    return [sumLat / zoneBins.length, sumLng / zoneBins.length];
   }, [zoneBins]);
 
-  const cfg = PRIORITY_CONFIG[directive.priority] || PRIORITY_CONFIG.low;
-  const methods = useMemo(() => getMethodsForCategory(directive.category), [directive.category]);
-
-  const criticalZoneBins = zoneBins.filter(b => (b.current_fill_percent || 0) >= 80);
+  // Calculate zone capacity and critical fill bins
+  const totalZoneCap = zoneBins.reduce((acc, b) => acc + (b.capacity_liters || 240), 0);
   const avgZoneFill = zoneBins.length > 0 
     ? Math.round(zoneBins.reduce((acc, b) => acc + (b.current_fill_percent || 0), 0) / zoneBins.length)
     : 0;
+  const criticalZoneBins = zoneBins.filter(b => (b.current_fill_percent || 0) >= 80);
+
+  if (!directive) return null;
 
   return (
     <div className="directive-modal-overlay" onClick={onClose}>
       <div className="directive-modal-content" onClick={(e) => e.stopPropagation()}>
+        
         {/* Modal Header */}
         <div className="directive-modal-header">
           <div className="dm-header-left">
-            <div className="dm-header-badge">
-              <Sparkles size={12} style={{ color: cfg.color }} />
-              Zone Intelligence &amp; Recycling Playbook
+            <div className="dm-zone-badge">
+              <MapPin size={13} style={{ color: '#2563eb' }} />
+              <span>{directive.zone}</span>
+              <span className="dm-zone-dot">•</span>
+              <span style={{ color: '#64748b', fontWeight: 600 }}>{zoneBins.length} Monitored Bins</span>
             </div>
-            <h2 className="dm-header-title">
-              {directive.zone}: {directive.category} Directives
-            </h2>
-            <div className="dm-header-meta">
-              <span className="suggestion-zone-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                <MapPin size={11} /> {directive.zone}
-              </span>
-              <span className="suggestion-category-tag">{directive.category}</span>
-              <span className="suggestion-priority-pill" style={{ background: cfg.bg, color: cfg.color }}>
+            <h2 className="dm-title">{directive.category} Material Diversion Strategy</h2>
+            <div className="dm-header-pills">
+              <span className="suggestion-priority-pill" style={{ background: cfg.bg, color: cfg.color, borderColor: `${cfg.color}33` }}>
                 <span className="priority-dot" style={{ background: cfg.dot }} />
                 {cfg.label}
               </span>
-              <span className="suggestion-metric-chip">{directive.metric}</span>
+              <span className="dm-metric-chip">{directive.metric}</span>
             </div>
           </div>
           <button className="dm-close-btn" onClick={onClose} title="Close (Esc)">
-            <X size={20} />
+            <X size={18} />
           </button>
         </div>
 
@@ -378,7 +384,7 @@ function DirectiveModal({ directive, bins, onClose }) {
         <div className="directive-modal-body">
 
           {/* Action Overview Notice */}
-          <div className="dm-action-banner" style={{ borderLeft: `4px solid ${cfg.color}` }}>
+          <div className="dm-action-banner" style={{ border: `1px solid ${cfg.color}40`, background: `${cfg.color}08`, borderRadius: '14px' }}>
             <div className="dm-action-icon">{directive.icon}</div>
             <div className="dm-action-text">
               <strong>Action Directive:</strong> {directive.action}

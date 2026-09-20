@@ -7,7 +7,7 @@ export const DEFAULT_BINS = [
   { id: 2, name: "C.G. Road Panchvati", zone: "West Zone (Navrangpura)", lat: 23.0265, lng: 72.5582, capacity_liters: 360, waste_type: "Plastic", current_fill_percent: 38.0 },
   { id: 3, name: "C.G. Road Swastik Cross", zone: "West Zone (Navrangpura)", lat: 23.0335, lng: 72.5588, capacity_liters: 480, waste_type: "Paper", current_fill_percent: 52.0 },
   { id: 4, name: "Gujarat University Library", zone: "West Zone (Navrangpura)", lat: 23.0372, lng: 72.5458, capacity_liters: 240, waste_type: "Paper", current_fill_percent: 30.0 },
-  { id: 5, name: "LD College of Engineering (Campus)", zone: "West Zone (Navrangpura)", lat: 23.0338, lng: 72.5467, capacity_liters: 2400, waste_type: "Other", current_fill_percent: 68.0 },
+  { id: 5, name: "University Engineering Campus (Central Tech Hub)", zone: "West Zone (Navrangpura)", lat: 23.0338, lng: 72.5467, capacity_liters: 2400, waste_type: "Other", current_fill_percent: 68.0 },
   { id: 6, name: "Mithakhali Six Roads", zone: "West Zone (Navrangpura)", lat: 23.0278, lng: 72.5620, capacity_liters: 240, waste_type: "Plastic", current_fill_percent: 35.0 },
   { id: 7, name: "Ambawadi Circle West", zone: "West Zone (Navrangpura)", lat: 23.0215, lng: 72.5510, capacity_liters: 120, waste_type: "Metal", current_fill_percent: 28.0 },
   { id: 8, name: "Sardar Patel Stadium Navrangpura", zone: "West Zone (Navrangpura)", lat: 23.0420, lng: 72.5645, capacity_liters: 480, waste_type: "Organic", current_fill_percent: 40.0 },

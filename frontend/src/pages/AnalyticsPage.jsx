@@ -15,6 +15,7 @@ import {
   Trash,
   ShieldAlert,
   Crown,
+  MapPin,
   AlertTriangle,
   Zap,
   Activity,
@@ -873,8 +874,14 @@ function AnalyticsPage() {
             </div>
             <div className="asab-text">
               <div className="asab-header-row">
-                <span className="asab-badge">👑 #1 CITY HOTSPOT</span>
-                <span className="asab-zone-pill">{topHotspot.zone}</span>
+                <span className="asab-badge">
+                  <span className="asab-live-beacon" />
+                  <span>#1 CITY HOTSPOT</span>
+                </span>
+                <span className="asab-zone-pill">
+                  <MapPin size={11} />
+                  <span>{topHotspot.zone}</span>
+                </span>
                 <span className="asab-capacity-pill">{topHotspot.capacity_liters}L Compactor</span>
               </div>
               <h3 className="asab-title">{topHotspot.name} generates the highest waste volume in Ahmedabad</h3>
@@ -886,7 +893,7 @@ function AnalyticsPage() {
           <div className="asab-stat-badge">
             <span className="asab-stat-label">Generation Rank</span>
             <span className="asab-stat-value">Rank #1 in AMC</span>
-            <span className="asab-stat-sub">High Frequency</span>
+            <span className="asab-stat-sub">High Frequency Priority</span>
           </div>
         </div>
       )}

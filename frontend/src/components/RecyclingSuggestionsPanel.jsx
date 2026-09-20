@@ -19,7 +19,9 @@ const TYPE_ICONS = {
 function SuggestionCard({ s }) {
   const cfg = PRIORITY_CONFIG[s.priority] || PRIORITY_CONFIG.low;
   return (
-    <div className="suggestion-card" style={{ borderLeft: `3px solid ${cfg.color}` }}>
+    <div className="suggestion-card">
+      <div className="kpi-card-glow-bg" style={{ background: cfg.color, opacity: 0.12 }}></div>
+      <div className="suggestion-card-inner">
       <div className="suggestion-top-row">
         <div className="suggestion-icon-wrap" style={{ color: cfg.color, background: cfg.bg }}>
           {TYPE_ICONS[s.type] || <ShieldCheck size={16} />}
@@ -43,6 +45,7 @@ function SuggestionCard({ s }) {
       <div className="suggestion-impact-row">
         <ArrowUpRight size={12} />
         <span className="suggestion-impact-text">{s.impact_estimate}</span>
+      </div>
       </div>
     </div>
   );

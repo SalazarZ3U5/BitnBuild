@@ -567,26 +567,36 @@ function Dashboard() {
         <div className="analytics-special-alert-banner" style={{ marginBottom: '24px' }}>
           <div className="asab-left">
             <div className="asab-icon-pod">
-              <Crown size={22} className="asab-crown-icon" />
+              <Crown size={24} className="asab-crown-icon" />
             </div>
             <div className="asab-text">
               <div className="asab-header-row">
-                <span className="asab-badge">👑 MUNICIPAL #1 PRODUCER SPECIAL ALERT</span>
-                <span className="asab-zone-pill">{specialTopAlert.zone || 'Central Zone (Khadia)'}</span>
+                <span className="asab-badge">
+                  <span className="asab-live-beacon" />
+                  <span>MUNICIPAL #1 PRODUCER</span>
+                </span>
+                <span className="asab-zone-pill">
+                  <MapPin size={11} />
+                  <span>{specialTopAlert.zone || 'Central Zone (Khadia/Riverfront)'}</span>
+                </span>
+                <span className="asab-telemetry-tag">
+                  <Flame size={11} />
+                  <span>High Volume Surge</span>
+                </span>
               </div>
               <h3 className="asab-title">Municipal #1 Waste Producer Critical Priority</h3>
               <p className="asab-desc">
-                {specialTopAlert.message}
+                {specialTopAlert.message ? specialTopAlert.message.replace(/^🚨\s*\[SPECIAL ALERT[^\n\]]*\]\s*/i, '') : specialTopAlert.message}
               </p>
             </div>
           </div>
           <button 
-            className="btn btn-primary"
+            className="asab-action-btn"
             onClick={() => navigate('/fleet')}
-            style={{ display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap', padding: '10px 18px', fontSize: '0.85rem' }}
           >
-            <Truck size={15} />
+            <Truck size={16} />
             <span>Track Fleet</span>
+            <ChevronRight size={14} className="asab-btn-chevron" />
           </button>
         </div>
       )}

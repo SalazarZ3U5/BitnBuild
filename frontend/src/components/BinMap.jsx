@@ -1,5 +1,6 @@
-import { useEffect, useRef, useMemo, useCallback, Fragment } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
+import { useState, useEffect, useRef, useMemo, useCallback, Fragment } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, Polygon, Circle, useMap } from 'react-leaflet';
+import { Flame, Layers, MapPin, TrendingUp, AlertTriangle, CheckCircle2, ChevronRight, X, Sparkles, Truck, Trash } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
@@ -23,6 +24,95 @@ const AHMEDABAD_BRIDGES = [
   [22.9960, 72.5645], // Dr. Ambedkar Bridge
 ];
 
+// 5 Authentic Municipal Waste Zones across Ahmedabad with Distinct Area Color Sectors
+export const AHMEDABAD_ZONES = [
+  {
+    id: 'central',
+    name: 'Central Zone (Khadia/Riverfront)',
+    shortName: 'Central Zone',
+    ward: 'Khadia, Bhadra & Old City Wards',
+    sectorColor: '#f59e0b', // Vibrant Amber Gold
+    sectorTag: 'Heritage & Market Sector',
+    centroid: [23.0255, 72.5825],
+    polygon: [
+      [23.0360, 72.5680],
+      [23.0380, 72.5920],
+      [23.0310, 72.6060],
+      [23.0180, 72.6020],
+      [23.0140, 72.5740],
+      [23.0250, 72.5670],
+    ],
+  },
+  {
+    id: 'west',
+    name: 'West Zone (Navrangpura)',
+    shortName: 'West Zone',
+    ward: 'Navrangpura, Ambawadi & CG Road',
+    sectorColor: '#3b82f6', // Royal Cobalt Blue
+    sectorTag: 'Commercial & Institutional Sector',
+    centroid: [23.0310, 72.5560],
+    polygon: [
+      [23.0450, 72.5400],
+      [23.0450, 72.5680],
+      [23.0250, 72.5660],
+      [23.0160, 72.5500],
+      [23.0220, 72.5380],
+      [23.0380, 72.5390],
+    ],
+  },
+  {
+    id: 'north_west',
+    name: 'North West Zone (Bodakdev)',
+    shortName: 'North West Zone',
+    ward: 'Bodakdev, SG Highway & Science City',
+    sectorColor: '#8b5cf6', // High-Tech Royal Violet
+    sectorTag: 'IT & Science City Sector',
+    centroid: [23.0510, 72.5160],
+    polygon: [
+      [23.0850, 72.4950],
+      [23.0820, 72.5250],
+      [23.0420, 72.5360],
+      [23.0320, 72.5280],
+      [23.0350, 72.5050],
+      [23.0600, 72.4980],
+    ],
+  },
+  {
+    id: 'south_west',
+    name: 'South West Zone (Satellite)',
+    shortName: 'South West Zone',
+    ward: 'Satellite, Prahlad Nagar & Sarkhej',
+    sectorColor: '#06b6d4', // Vibrant Cyan / Teal
+    sectorTag: 'Corporate & Residential Sector',
+    centroid: [23.0060, 72.5140],
+    polygon: [
+      [23.0250, 72.5300],
+      [23.0200, 72.5370],
+      [23.0020, 72.5320],
+      [22.9750, 72.5000],
+      [22.9820, 72.4900],
+      [23.0120, 72.4980],
+    ],
+  },
+  {
+    id: 'east',
+    name: 'East Zone (Bapunagar/Nikol)',
+    shortName: 'East Zone',
+    ward: 'Bapunagar, Nikol & Naroda Wards',
+    sectorColor: '#10b981', // Emerald Green
+    sectorTag: 'Industrial & Civic Sector',
+    centroid: [23.0280, 72.6250],
+    polygon: [
+      [23.0780, 72.6450],
+      [23.0550, 72.6750],
+      [23.0350, 72.6700],
+      [22.9900, 72.6200],
+      [23.0020, 72.5920],
+      [23.0350, 72.6080],
+    ],
+  },
+];
+
 function getFillColor(fill) {
   if (fill > 80) return '#f43f5e';
   if (fill > 50) return '#f59e0b';
@@ -31,7 +121,6 @@ function getFillColor(fill) {
 
 function getBinMarkerIcon(bin, fillPercent, wasCollected, isBeingCollected, isBigBin) {
   const color = wasCollected ? '#10b981' : getFillColor(fillPercent);
-  const roundedFill = Math.round(fillPercent);
 
   if (isBigBin) {
     return L.divIcon({
@@ -40,15 +129,14 @@ function getBinMarkerIcon(bin, fillPercent, wasCollected, isBeingCollected, isBi
         <div class="big-bin-container ${isBeingCollected ? 'collecting-anim' : ''}">
           <div class="big-bin-halo" style="border-color: ${color}"></div>
           <div class="big-bin-core" style="background: ${color}">
-            <span class="big-bin-symbol">${bin?.name?.toLowerCase().includes('manek chowk') ? '👑' : '🏢'}</span>
-            <span class="big-bin-pct">${wasCollected ? '✓' : roundedFill + '%'}</span>
+            <span class="big-bin-symbol">${wasCollected ? '✓' : (bin?.name?.toLowerCase().includes('manek chowk') ? '👑' : '🏢')}</span>
           </div>
           <div class="big-bin-pill-tag">${bin?.name?.toLowerCase().includes('manek chowk') ? '👑 #1 Hotspot' : 'Hub Bin'}</div>
         </div>
       `,
-      iconSize: [64, 64],
-      iconAnchor: [32, 32],
-      popupAnchor: [0, -34],
+      iconSize: [52, 52],
+      iconAnchor: [26, 26],
+      popupAnchor: [0, -28],
     });
   }
 
@@ -56,14 +144,14 @@ function getBinMarkerIcon(bin, fillPercent, wasCollected, isBeingCollected, isBi
     className: 'bin-div-icon-wrapper',
     html: `
       <div class="standard-bin-pin ${isBeingCollected ? 'collecting-anim' : ''} ${wasCollected ? 'collected' : ''}" style="--marker-color: ${color}">
-        <div class="bin-pin-circle" style="background: ${color}; box-shadow: 0 2px 8px ${color}66">
-          <span class="bin-pin-val">${wasCollected ? '✓' : roundedFill + '%'}</span>
+        <div class="bin-pin-circle" style="background: ${color}; box-shadow: 0 2px 8px ${color}88">
+          ${wasCollected ? '<span class="bin-pin-check">✓</span>' : '<span class="bin-pin-dot"></span>'}
         </div>
       </div>
     `,
-    iconSize: [32, 32],
-    iconAnchor: [16, 16],
-    popupAnchor: [0, -18],
+    iconSize: [26, 26],
+    iconAnchor: [13, 13],
+    popupAnchor: [0, -14],
   });
 }
 
@@ -75,7 +163,6 @@ function getHotspotMarkerIcon(bin, fillPercent, tier) {
     low: '#10b981',
   };
   const color = tierColors[tier] || '#f43f5e';
-  const roundedFill = Math.round(fillPercent);
   return L.divIcon({
     className: 'bin-div-icon-wrapper',
     html: `
@@ -84,13 +171,12 @@ function getHotspotMarkerIcon(bin, fillPercent, tier) {
         <div class="hotspot-ring-mid" style="border-color: ${color}80"></div>
         <div class="hotspot-core" style="background: ${color}">
           <span class="hotspot-icon">🔥</span>
-          <span class="hotspot-pct">${roundedFill}%</span>
         </div>
       </div>
     `,
-    iconSize: [52, 52],
-    iconAnchor: [26, 26],
-    popupAnchor: [0, -28],
+    iconSize: [44, 44],
+    iconAnchor: [22, 22],
+    popupAnchor: [0, -24],
   });
 }
 
@@ -297,6 +383,76 @@ function TruckMarker({ truck, onSelectTruck }) {
 
 function BinMap({ bins, routes, truckStates = [], collectionActive, totalWasteCollected = 0, heatmapData = [], heatmapMode = false, heatmapHoursAhead = 0, onSelectTruck, hotspotBinIds = new Set(), highlightRouteIndex = null }) {
   const center = [23.0225, 72.5714];
+  const [showAreaSectors, setShowAreaSectors] = useState(true);
+  const [sectorColorMode, setSectorColorMode] = useState('identity'); // 'identity' (color sectors by region) or 'heat' (color sectors by fill level)
+
+  // Compute live municipal region statistics from current bins telemetry
+  const { zoneStats, citywideWasteLiters } = useMemo(() => {
+    let citywideWaste = 0;
+    const stats = AHMEDABAD_ZONES.map(zone => {
+      const zBins = bins.filter(b => {
+        if (!b.zone) return false;
+        const bz = b.zone.toLowerCase();
+        const zs = zone.shortName.toLowerCase();
+        const zid = zone.id.toLowerCase();
+        return bz.includes(zs) || bz.includes(zid) || (zone.id === 'north_west' && bz.includes('north west')) || (zone.id === 'south_west' && bz.includes('south west'));
+      });
+
+      let totalWasteLiters = 0;
+      let totalCapacityLiters = 0;
+      let criticalCount = 0;
+      const streamMap = {};
+
+      zBins.forEach(b => {
+        const cap = b.capacity_liters || 240;
+        const fill = b.current_fill_percent || 0;
+        const liters = (cap * fill) / 100;
+        totalWasteLiters += liters;
+        totalCapacityLiters += cap;
+        if (fill >= 80) criticalCount++;
+
+        const st = b.waste_type || 'General';
+        streamMap[st] = (streamMap[st] || 0) + liters;
+      });
+
+      citywideWaste += totalWasteLiters;
+      const avgFill = totalCapacityLiters > 0 ? (totalWasteLiters / totalCapacityLiters) * 100 : 0;
+
+      let heatColor = '#10b981';
+      let heatTier = 'Low Generation';
+      let fillOpacity = 0.18;
+
+      if (avgFill >= 58 || totalWasteLiters >= 2200) {
+        heatColor = '#f43f5e'; // Crimson Surge Hotspot
+        heatTier = 'Critical Surge';
+        fillOpacity = 0.32;
+      } else if (avgFill >= 46 || totalWasteLiters >= 1600) {
+        heatColor = '#f97316'; // Amber / Orange High
+        heatTier = 'High Generation';
+        fillOpacity = 0.26;
+      } else if (avgFill >= 36) {
+        heatColor = '#3b82f6'; // Cobalt Moderate
+        heatTier = 'Moderate Generation';
+        fillOpacity = 0.22;
+      }
+
+      return {
+        ...zone,
+        bins: zBins,
+        binCount: zBins.length,
+        totalWasteLiters: Math.round(totalWasteLiters),
+        totalCapacityLiters: Math.round(totalCapacityLiters),
+        avgFill: Math.round(avgFill),
+        criticalCount,
+        heatColor,
+        heatTier,
+        fillOpacity,
+        streamMap,
+      };
+    });
+
+    return { zoneStats: stats, citywideWasteLiters: Math.round(citywideWaste) };
+  }, [bins]);
 
   // Derive collected bin names from all trucks
   const collectedBinNames = useMemo(() => {
@@ -320,6 +476,81 @@ function BinMap({ bins, routes, truckStates = [], collectionActive, totalWasteCo
 
   return (
     <div className="map-container-wrapper">
+      {/* Floating Glassmorphic Map View Controls */}
+      <div className="map-floating-hud-controls">
+        <button
+          type="button"
+          className={`map-hud-toggle-btn ${showAreaSectors ? 'active' : ''}`}
+          onClick={() => setShowAreaSectors(prev => !prev)}
+          title="Toggle Municipal Region Color Sectors on the Map"
+        >
+          <Layers size={13} />
+          <span>Area Sectors {showAreaSectors ? 'ON' : 'OFF'}</span>
+        </button>
+
+        {showAreaSectors && (
+          <div className="map-hud-sub-modes">
+            <button
+              type="button"
+              className={`map-hud-toggle-btn ${sectorColorMode === 'identity' ? 'active' : ''}`}
+              onClick={() => setSectorColorMode('identity')}
+              title="View Distinct Color Sectors per Municipal Area"
+            >
+              <span>🎨 Sector Colors</span>
+            </button>
+            <button
+              type="button"
+              className={`map-hud-toggle-btn btn-heatmap ${sectorColorMode === 'heat' ? 'active' : ''}`}
+              onClick={() => setSectorColorMode('heat')}
+              title="View Real-Time Waste Generation Heatmap"
+            >
+              <Flame size={13} />
+              <span>Waste Heatmap</span>
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Area-wise Municipal Color Sectors Floating Legend */}
+      {showAreaSectors && (
+        <div className="map-heat-legend">
+          <div className="mhl-title">
+            {sectorColorMode === 'identity' ? (
+              <>
+                <Layers size={13} style={{ color: '#3b82f6' }} />
+                <span>Municipal Area Color Sectors</span>
+              </>
+            ) : (
+              <>
+                <Flame size={13} style={{ color: '#e11d48' }} />
+                <span>Waste Generation Heatmap</span>
+              </>
+            )}
+          </div>
+          {sectorColorMode === 'identity' ? (
+            <div className="mhl-sectors-grid">
+              {zoneStats.map(z => (
+                <div key={z.id} className="mhl-sector-item">
+                  <span className="mhl-dot" style={{ background: z.sectorColor }} />
+                  <span className="mhl-sector-name">{z.shortName}</span>
+                  <span className="mhl-sector-bins">({z.binCount})</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="mhl-stops">
+              <div className="mhl-stop"><span className="mhl-dot" style={{ background: '#10b981' }} /> &lt;36% Low</div>
+              <div className="mhl-stop"><span className="mhl-dot" style={{ background: '#3b82f6' }} /> 36-46% Mod</div>
+              <div className="mhl-stop"><span className="mhl-dot" style={{ background: '#f97316' }} /> 46-58% High</div>
+              <div className="mhl-stop"><span className="mhl-dot" style={{ background: '#f43f5e' }} /> &gt;58% Surge</div>
+            </div>
+          )}
+          <div className="mhl-summary">
+            5 AMC Municipal Sectors · Total: <strong>{citywideWasteLiters.toLocaleString()} L</strong>
+          </div>
+        </div>
+      )}
+
       <MapContainer
         center={center}
         zoom={12}
@@ -336,6 +567,118 @@ function BinMap({ bins, routes, truckStates = [], collectionActive, totalWasteCo
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           maxZoom={19}
         />
+
+        {/* Region-wise Municipal Area Color Sectors & Heatmap Overlays (Text ONLY appears on click) */}
+        {showAreaSectors && zoneStats.map(zone => {
+          const displayColor = sectorColorMode === 'heat' ? zone.heatColor : (zone.sectorColor || '#3b82f6');
+          const fillOpacity = sectorColorMode === 'heat' ? zone.fillOpacity : 0.22;
+
+          return (
+            <Fragment key={`zone-sector-${zone.id}-${sectorColorMode}`}>
+              {/* Region Boundary Area Color Sector Polygon */}
+              <Polygon
+                positions={zone.polygon}
+                pathOptions={{
+                  fillColor: displayColor,
+                  fillOpacity: fillOpacity,
+                  color: displayColor,
+                  weight: 2.5,
+                  dashArray: '6, 6',
+                  className: 'zone-polygon-clickable',
+                }}
+              >
+                <Popup className="zone-heat-popup">
+                  <div className="zhp-wrap">
+                    <div className="zhp-header">
+                      <h4 className="zhp-title">{zone.name}</h4>
+                      <span className="zhp-tier-badge" style={{ background: `${displayColor}20`, color: displayColor }}>
+                        {sectorColorMode === 'heat' ? zone.heatTier : (zone.sectorTag || 'Municipal Sector')}
+                      </span>
+                    </div>
+                    <div className="zhp-ward">{zone.ward}</div>
+                    <div className="zhp-metrics-grid">
+                      <div className="zhp-stat-box">
+                        <span className="zhp-stat-val" style={{ color: displayColor }}>{zone.totalWasteLiters.toLocaleString()} L</span>
+                        <span className="zhp-stat-lbl">Waste Volume</span>
+                      </div>
+                      <div className="zhp-stat-box">
+                        <span className="zhp-stat-val">{zone.avgFill}%</span>
+                        <span className="zhp-stat-lbl">Avg Capacity Fill</span>
+                      </div>
+                      <div className="zhp-stat-box">
+                        <span className="zhp-stat-val">{zone.binCount}</span>
+                        <span className="zhp-stat-lbl">Monitored Bins</span>
+                      </div>
+                      <div className="zhp-stat-box">
+                        <span className="zhp-stat-val" style={{ color: zone.criticalCount > 0 ? '#f43f5e' : '#10b981' }}>
+                          {zone.criticalCount}
+                        </span>
+                        <span className="zhp-stat-lbl">Critical Overflows</span>
+                      </div>
+                    </div>
+                    {Object.keys(zone.streamMap).length > 0 && (
+                      <div>
+                        <div className="zhp-stream-title">Stream Generation Breakdown</div>
+                        <div className="zhp-stream-pills">
+                          {Object.entries(zone.streamMap).map(([stream, liters]) => (
+                            <span key={stream} className="zhp-stream-pill">
+                              {stream}: <strong>{Math.round(liters)}L</strong>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </Popup>
+              </Polygon>
+
+              {/* Centroid Color Sector Radiance Core (Also clickable) */}
+              <Circle
+                center={zone.centroid}
+                radius={920}
+                pathOptions={{
+                  fillColor: displayColor,
+                  fillOpacity: 0.12,
+                  color: 'transparent',
+                  weight: 0,
+                  className: 'zone-polygon-clickable',
+                }}
+              >
+                <Popup className="zone-heat-popup">
+                  <div className="zhp-wrap">
+                    <div className="zhp-header">
+                      <h4 className="zhp-title">{zone.name}</h4>
+                      <span className="zhp-tier-badge" style={{ background: `${displayColor}20`, color: displayColor }}>
+                        {sectorColorMode === 'heat' ? zone.heatTier : (zone.sectorTag || 'Municipal Sector')}
+                      </span>
+                    </div>
+                    <div className="zhp-ward">{zone.ward}</div>
+                    <div className="zhp-metrics-grid">
+                      <div className="zhp-stat-box">
+                        <span className="zhp-stat-val" style={{ color: displayColor }}>{zone.totalWasteLiters.toLocaleString()} L</span>
+                        <span className="zhp-stat-lbl">Waste Volume</span>
+                      </div>
+                      <div className="zhp-stat-box">
+                        <span className="zhp-stat-val">{zone.avgFill}%</span>
+                        <span className="zhp-stat-lbl">Avg Capacity Fill</span>
+                      </div>
+                      <div className="zhp-stat-box">
+                        <span className="zhp-stat-val">{zone.binCount}</span>
+                        <span className="zhp-stat-lbl">Monitored Bins</span>
+                      </div>
+                      <div className="zhp-stat-box">
+                        <span className="zhp-stat-val" style={{ color: zone.criticalCount > 0 ? '#f43f5e' : '#10b981' }}>
+                          {zone.criticalCount}
+                        </span>
+                        <span className="zhp-stat-lbl">Critical Overflows</span>
+                      </div>
+                    </div>
+                  </div>
+                </Popup>
+              </Circle>
+            </Fragment>
+          );
+        })}
 
         {/* High-visibility Smart Bin Markers */}
         {bins.map(bin => {
