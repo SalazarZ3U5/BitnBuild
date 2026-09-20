@@ -162,7 +162,7 @@ function AnalyticsPage() {
         </div>
         <div className="quantum-loading-text">
           <h3>Synthesizing Citywide Telemetry & Circadian Dynamics</h3>
-          <p>Processing sensor readings across 40 nodes & 5 Ahmedabad municipal zones...</p>
+          <p>Processing sensor readings across 250 nodes & 5 Ahmedabad municipal zones...</p>
         </div>
       </div>
     );
@@ -253,7 +253,7 @@ function AnalyticsPage() {
               <div className="kpi-progress-track">
                 <div className="kpi-progress-fill" style={{ width: '100%', background: 'linear-gradient(90deg, #60a5fa, #3b82f6)' }}></div>
               </div>
-              <span className="kpi-subtext">30-day cumulative aggregate across 40 smart bins</span>
+              <span className="kpi-subtext">30-day cumulative aggregate across {patterns?.bin_details?.length || 250} smart bins</span>
             </div>
           </div>
         </div>

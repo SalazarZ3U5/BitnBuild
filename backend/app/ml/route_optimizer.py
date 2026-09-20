@@ -131,8 +131,8 @@ def get_route_road_geometry(depot: dict, stops: list[dict]) -> tuple[list[list[f
     if cache_key in _GEOMETRY_CACHE:
         return _GEOMETRY_CACHE[cache_key]
 
-    # Try fast OSRM route service
-    if HAS_HTTPX:
+    # Try fast OSRM route service (safely limited to 35 points per URL to prevent 414 URI Too Long)
+    if HAS_HTTPX and len(ordered_pts) <= 35:
         try:
             coords_str = ";".join(f"{lng:.6f},{lat:.6f}" for lat, lng in ordered_pts)
             url = f"https://router.project-osrm.org/route/v1/driving/{coords_str}?overview=full&geometries=geojson"
@@ -306,7 +306,8 @@ def optimize_routes(db: Session, fill_threshold: float = 50.0) -> dict:
         except Exception:
             critical_count = 0
 
-    if critical_count >= 30 or fill_threshold <= 50.0:
+    threshold_critical = max(30, int(len(all_db_bins) * 0.75)) if all_db_bins else 30
+    if critical_count >= threshold_critical or fill_threshold <= 50.0:
         bins = all_db_bins if isinstance(all_db_bins, list) else []
     else:
         bins = (

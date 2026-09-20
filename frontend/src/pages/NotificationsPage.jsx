@@ -76,7 +76,7 @@ export default function NotificationsPage() {
   // Run full anomaly detection scan
   const handleRunDetection = async () => {
     setLoading(true);
-    showToast('Running isolation forest anomaly detection scan across 40 AMC bins...');
+    showToast('Running isolation forest anomaly detection scan across all 250 AMC bins...');
     try {
       const res = await api.post('/alerts/detect');
       showToast(`Scan complete: ${res.data.new_alerts} new alert(s) detected.`);
@@ -139,7 +139,7 @@ export default function NotificationsPage() {
             className="btn btn-primary" 
             onClick={handleRunDetection} 
             disabled={loading}
-            title="Scan all 40 bins for overflows & sensor anomalies"
+            title="Scan all 250 bins for overflows & sensor anomalies"
           >
             <Zap size={14} />
             <span>Run Anomaly Scan</span>
@@ -250,7 +250,7 @@ export default function NotificationsPage() {
               <div className="kpi-progress-track">
                 <div className="kpi-progress-fill" style={{ width: '100%', background: 'linear-gradient(90deg, #38bdf8, #3b82f6)' }}></div>
               </div>
-              <span className="kpi-subtext">● Live stream synchronized across <strong>40 nodes</strong></span>
+              <span className="kpi-subtext">● Live stream synchronized across <strong>250 nodes</strong></span>
             </div>
           </div>
         </div>

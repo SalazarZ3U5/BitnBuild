@@ -216,7 +216,7 @@ function Dashboard() {
     resetFleet();
     try {
       await api.post('/simulation/reset');
-      showSimToast('↺ Entire simulation reset: All 40 AMC bins restored to baseline nominal (green <40%). Ready to re-run!');
+      showSimToast('↺ Entire simulation reset: All 250 AMC bins restored to baseline nominal (green <40%). Ready to re-run!');
       setAllCritical(false);
       hasAutoTriggered.current = false;
       setSimRunning(false);
@@ -234,7 +234,7 @@ function Dashboard() {
     if (hasAutoTriggered.current) return;
     hasAutoTriggered.current = true;
     
-    showSimToast('🚨 All bins critical! Auto-computing 4 CVRP + A* fleet routes covering all 40 bins...');
+    showSimToast('🚨 All bins critical! Auto-computing 4 CVRP + A* fleet routes covering critical AMC bins...');
     
     try {
       const generatedRoutes = await fetchFleetRoutes();
@@ -393,7 +393,7 @@ function Dashboard() {
             className="sim-btn-reset-header" 
             onClick={handleResetSimulation} 
             disabled={simLoading}
-            title="Reset entire simulation and all 40 bins to nominal"
+            title="Reset entire simulation and all 250 bins to nominal"
           >
             <RotateCcw size={14} />
             <span>Reset Sim</span>
@@ -472,7 +472,7 @@ function Dashboard() {
                   className="sim-btn sim-btn-lg sim-btn-reset-main"
                   onClick={handleResetSimulation}
                   disabled={simLoading}
-                  title="Reset entire simulation and all 40 bins to nominal state (<40%)"
+                  title="Reset entire simulation and all 250 bins to nominal state (<40%)"
                 >
                   <RotateCcw size={15} />
                   <span>Reset All Sensors</span>
@@ -546,7 +546,7 @@ function Dashboard() {
                   <div className="anomaly-icon-wrap citywide"><TrendingUp size={16} /></div>
                   <div className="anomaly-meta">
                     <span className="anomaly-name">Step Citywide Telemetry</span>
-                    <span className="anomaly-desc">Evolve all 40 sensors toward critical</span>
+                    <span className="anomaly-desc">Evolve all 250 sensors toward critical</span>
                   </div>
                 </button>
               </div>
@@ -646,7 +646,7 @@ function Dashboard() {
               </div>
               <div className="collection-dash-text">
                 <h3>🚛 Fleet Collection In Progress</h3>
-                <p>A* optimized routes — {activeTrucks} truck{activeTrucks !== 1 ? 's' : ''} active, {totalStopsDone}/{totalPlannedStops || 40} stops completed</p>
+                <p>A* optimized routes — {activeTrucks} truck{activeTrucks !== 1 ? 's' : ''} active, {totalStopsDone}/{totalPlannedStops || bins.length || 250} stops completed</p>
               </div>
             </div>
             <div className="collection-banner-stats">
@@ -656,7 +656,7 @@ function Dashboard() {
               </div>
               <div className="collection-stat-divider"></div>
               <div className="collection-stat-item">
-                <span className="collection-stat-value">{totalStopsDone}/{totalPlannedStops || 40}</span>
+                <span className="collection-stat-value">{totalStopsDone}/{totalPlannedStops || bins.length || 250}</span>
                 <span className="collection-stat-label">Stops Done</span>
               </div>
               <div className="collection-stat-divider"></div>
@@ -862,10 +862,10 @@ function Dashboard() {
             </div>
             <div className="kpi-bottom-detail">
               <div className="kpi-progress-track">
-                <div className="kpi-progress-fill bg-cyan" style={{ width: `${collectionActive ? Math.min((totalStopsDone / (totalPlannedStops || 40)) * 100, 100) : collectionComplete ? 100 : 25}%` }}></div>
+                <div className="kpi-progress-fill bg-cyan" style={{ width: `${collectionActive ? Math.min((totalStopsDone / (totalPlannedStops || bins.length || 250)) * 100, 100) : collectionComplete ? 100 : 25}%` }}></div>
               </div>
               <span className="kpi-subtext" style={{ display: 'flex', alignItems: 'center', gap: '3px', color: '#0891b2', fontWeight: 600 }}>
-                {collectionActive ? `${totalStopsDone}/${totalPlannedStops || 40} stops` : 'Fleet Tracker'} <ChevronRight size={12} />
+                {collectionActive ? `${totalStopsDone}/${totalPlannedStops || bins.length || 250} stops` : 'Fleet Tracker'} <ChevronRight size={12} />
               </span>
             </div>
           </div>
@@ -883,7 +883,7 @@ function Dashboard() {
               </div>
               <h3>{collectionComplete ? 'All Routes Serviced' : `Fleet In Progress — ${activeTrucks} Truck${activeTrucks !== 1 ? 's' : ''} Active`}</h3>
             </div>
-            <span className="pill-counter">{totalStopsDone}/{totalPlannedStops || 40} Stops · {totalWasteCollected}L Collected</span>
+            <span className="pill-counter">{totalStopsDone}/{totalPlannedStops || bins.length || 250} Stops · {totalWasteCollected}L Collected</span>
           </div>
           <div className="card-body">
             <div className="truck-cards-grid">
@@ -950,7 +950,7 @@ function Dashboard() {
           <div className="card-header">
             <div className="card-header-titles">
               <div className="card-badge">AMC Municipal Geospatial Grid</div>
-              <h3>Ahmedabad Smart Bin Network — 40 Real-Time Municipal Bins</h3>
+              <h3>Ahmedabad Smart Bin Network — {bins.length || 250} Real-Time Municipal Bins</h3>
             </div>
             <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
               <button className="btn btn-secondary" onClick={() => navigate('/fleet')}>
@@ -1016,7 +1016,7 @@ function Dashboard() {
           <div className="forecast-teaser-info">
             <h4>AI Fill Level Forecast &amp; Predictive Route Dispatch</h4>
             <p>
-              Neural &amp; linear time-horizon drift projections (1h to 72h) across all 40 AMC smart bins. Anticipate overflows and generate proactive CVRP collection routes before emergency thresholds are breached.
+              Neural &amp; linear time-horizon drift projections (1h to 72h) across all {bins.length || 250} AMC smart bins. Anticipate overflows and generate proactive CVRP collection routes before emergency thresholds are breached.
             </p>
           </div>
         </div>
@@ -1038,7 +1038,7 @@ function Dashboard() {
               <div className="card-badge badge-blue">Fleet Analytics</div>
               <h3>Waste Composition &amp; Fill Level Distribution</h3>
             </div>
-            <span className="pill-counter">40 Bins Monitored Across 5 AMC Zones</span>
+            <span className="pill-counter">{bins.length || 250} Bins Monitored Across 5 AMC Zones</span>
           </div>
           <div className="card-body">
             <StatsCharts bins={bins} />

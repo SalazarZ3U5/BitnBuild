@@ -231,7 +231,7 @@ export default function FleetTrackingPage() {
               </div>
             </div>
             <div className="kpi-metric-wrap">
-              <span className="kpi-number text-emerald-gradient">{totalStopsDone}/{totalPlannedStops || 40}</span>
+              <span className="kpi-number text-emerald-gradient">{totalStopsDone}/{totalPlannedStops || bins.length || 250}</span>
               <span className="kpi-unit-pill pill-emerald">{completionPct}% Done</span>
             </div>
             <div className="kpi-bottom-detail">

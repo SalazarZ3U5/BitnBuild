@@ -209,7 +209,7 @@ async def manual_tick():
 
 @router.post("/fill-all-critical")
 async def fill_all_critical(db: Session = Depends(get_db)):
-    """Surges all 40 bins to critical level (86–98%) immediately and auto-pauses simulation."""
+    """Surges all 250 bins to critical level (86–98%) immediately and auto-pauses simulation."""
     global _sim_running, _sim_task
     _sim_running = False
     if _sim_task:
@@ -455,7 +455,7 @@ async def reset_simulation(db: Session = Depends(get_db)):
     return {
         "status": "reset_completed",
         "step_count": 0,
-        "message": "All 40 AMC bins restored to nominal baseline (18-38% fill). Alerts cleared, routes reset. Ready to re-run.",
+        "message": f"All {len(bins)} AMC bins restored to nominal baseline (18-38% fill). Alerts cleared, routes reset. Ready to re-run.",
         "all_critical": False,
     }
 

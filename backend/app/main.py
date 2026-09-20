@@ -73,13 +73,22 @@ async def lifespan(app: FastAPI):
     db = SessionLocal()
     try:
         bin_count = db.query(Bin).count()
-        if bin_count == 0:
-            print("[Startup] No bins found — seeding synthetic data...")
+        if bin_count < 250:
+            print(f"[Startup] Found {bin_count} bins (< 250) — reseeding full 250 AMC landmark network...")
+            from app.models import Alert, FillReading, RouteStop, Route, Vehicle
             from app.simulation.generate_synthetic_data import seed_database
+            # Clean old tables
+            db.query(Alert).delete()
+            db.query(FillReading).delete()
+            db.query(RouteStop).delete()
+            db.query(Route).delete()
+            db.query(Vehicle).delete()
+            db.query(Bin).delete()
+            db.commit()
             seed_database(db)
-            print("[Startup] Synthetic data seeded!")
+            print("[Startup] Full 250 AMC landmark network seeded successfully!")
         else:
-            print(f"[Startup] Syncing accurate landmark locations for {bin_count} bins...")
+            print(f"[Startup] Network intact with {bin_count} bins. Syncing accurate landmark metadata...")
             from app.simulation.generate_synthetic_data import sync_accurate_landmark_bins
             sync_accurate_landmark_bins(db)
             print("[Startup] Landmark locations synchronized accurately!")

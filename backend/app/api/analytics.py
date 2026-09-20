@@ -27,27 +27,31 @@ def get_patterns(db: Session = Depends(get_db)):
     if not bins:
         return {"clusters": [], "message": "No bins found"}
 
-    # Compute avg daily fill rate per bin from readings
+    # Single batch query for last 5 days across all bins
+    from collections import defaultdict
+    cutoff = datetime.datetime.utcnow() - datetime.timedelta(days=5)
+    recent_readings = (
+        db.query(FillReading.bin_id, FillReading.timestamp, FillReading.fill_percent)
+        .filter(FillReading.timestamp >= cutoff)
+        .order_by(FillReading.bin_id, FillReading.timestamp)
+        .all()
+    )
+    readings_by_bin = defaultdict(list)
+    for r in recent_readings:
+        readings_by_bin[r.bin_id].append(r)
+
+    # Compute avg daily fill rate per bin from batch readings
     bin_data = []
     for b in bins:
-        readings = (
-            db.query(FillReading)
-            .filter(FillReading.bin_id == b.id)
-            .order_by(FillReading.timestamp)
-            .all()
-        )
+        readings = readings_by_bin.get(b.id, [])
         if len(readings) < 2:
-            avg_daily_rate = 0.0
+            avg_daily_rate = float(b.current_fill_percent or 0.0) * 0.25
         else:
-            total_days = (readings[-1].timestamp - readings[0].timestamp).total_seconds() / 86400
-            if total_days < 1:
-                total_days = 1
-            # Sum positive increments (fills), ignoring resets (collections)
-            total_fill = 0.0
-            for i in range(1, len(readings)):
-                diff = readings[i].fill_percent - readings[i - 1].fill_percent
-                if diff > 0:
-                    total_fill += diff
+            total_days = max(1.0, (readings[-1].timestamp - readings[0].timestamp).total_seconds() / 86400.0)
+            total_fill = sum(
+                max(0.0, readings[i].fill_percent - readings[i - 1].fill_percent)
+                for i in range(1, len(readings))
+            )
             avg_daily_rate = total_fill / total_days
 
         bin_data.append({
@@ -126,24 +130,29 @@ def get_hotspots(top_n: int = 8, db: Session = Depends(get_db)):
     if not bins:
         return {"hotspots": []}
 
+    # Single batch query for last 5 days
+    from collections import defaultdict
+    cutoff = datetime.datetime.utcnow() - datetime.timedelta(days=5)
+    recent_readings = (
+        db.query(FillReading.bin_id, FillReading.timestamp, FillReading.fill_percent)
+        .filter(FillReading.timestamp >= cutoff)
+        .order_by(FillReading.bin_id, FillReading.timestamp)
+        .all()
+    )
+    readings_by_bin = defaultdict(list)
+    for r in recent_readings:
+        readings_by_bin[r.bin_id].append(r)
+
     bin_fill_rates = []
     for b in bins:
-        readings = (
-            db.query(FillReading)
-            .filter(FillReading.bin_id == b.id)
-            .order_by(FillReading.timestamp)
-            .all()
-        )
+        readings = readings_by_bin.get(b.id, [])
         if len(readings) < 2:
-            avg_rate = b.current_fill_percent * 0.5 if b.current_fill_percent else 0.0
+            avg_rate = (b.current_fill_percent or 0.0) * 0.35
         else:
-            total_days = (readings[-1].timestamp - readings[0].timestamp).total_seconds() / 86400
-            if total_days < 1:
-                total_days = 1
+            total_days = max(1.0, (readings[-1].timestamp - readings[0].timestamp).total_seconds() / 86400.0)
             total_fill = sum(
-                readings[i].fill_percent - readings[i - 1].fill_percent
+                max(0.0, readings[i].fill_percent - readings[i - 1].fill_percent)
                 for i in range(1, len(readings))
-                if readings[i].fill_percent - readings[i - 1].fill_percent > 0
             )
             avg_rate = total_fill / total_days
 
@@ -222,21 +231,25 @@ def get_waste_totals(
     from collections import defaultdict
     daily_buckets = defaultdict(lambda: {"recyclable": 0.0, "residual": 0.0})
 
+    # Single batch query for timeline readings
+    all_readings = (
+        db.query(FillReading.bin_id, FillReading.timestamp, FillReading.fill_percent)
+        .filter(
+            FillReading.timestamp >= start,
+            FillReading.timestamp <= end,
+        )
+        .order_by(FillReading.bin_id, FillReading.timestamp)
+        .all()
+    )
+    from collections import defaultdict
+    readings_by_bin = defaultdict(list)
+    for r in all_readings:
+        readings_by_bin[r.bin_id].append(r)
+
     for b in bins:
         wt = b.waste_type.value if isinstance(b.waste_type, WasteType) else str(b.waste_type)
         is_rec = wt in recyclable_types
-
-        # Get readings in range where fill drops (collection events)
-        readings = (
-            db.query(FillReading)
-            .filter(
-                FillReading.bin_id == b.id,
-                FillReading.timestamp >= start,
-                FillReading.timestamp <= end,
-            )
-            .order_by(FillReading.timestamp)
-            .all()
-        )
+        readings = readings_by_bin.get(b.id, [])
 
         collected_liters = 0.0
         cap = float(b.capacity_liters or 240.0)

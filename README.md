@@ -310,7 +310,7 @@ Positioned front-and-center on the primary [Dashboard](file:///d:/Kavin/programm
 #### 2. FastAPI Asynchronous State Machine (`/simulation`)
 The backend router [backend/app/api/simulation.py](file:///d:/Kavin/programming/Hackathons/BitNBuild/BitnBuild/backend/app/api/simulation.py) executes the orchestration loop:
 * **Background Worker**: Managed via an `asyncio.Task` (`_run_sim_loop`) that sleeps for the configured interval, checks safety boundaries, and executes `perform_simulation_step()`.
-* **Auto-Pause Safety Interlock**: If all 40 bins reach critical overflow ($>80\%$), the background task automatically terminates itself to prevent runaway infinite database locks, notifying operators via UI status indicators.
+* **Auto-Pause Safety Interlock**: If all 250 bins reach critical overflow ($>80\%$), the background task automatically terminates itself to prevent runaway infinite database locks, notifying operators via UI status indicators.
 
 #### 3. Mathematical Diurnal Modeling & Persistence
 In each simulation step:

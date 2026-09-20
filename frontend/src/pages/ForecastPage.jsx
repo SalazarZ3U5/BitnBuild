@@ -96,7 +96,7 @@ export default function ForecastPage() {
             AI Fill Forecast &amp; <em>Proactive</em> Dispatch
           </h1>
           <p className="editorial-subtitle">
-            Anticipate sensor fill evolution 1 to 72 hours ahead across all 40 AMC municipal bins. Generate proactive CVRP routes before bins breach emergency thresholds.
+            Anticipate sensor fill evolution 1 to 72 hours ahead across all 250 AMC municipal bins. Generate proactive CVRP routes before bins breach emergency thresholds.
           </p>
         </div>
         <div className="header-actions">
@@ -178,7 +178,7 @@ export default function ForecastPage() {
               <div className="kpi-progress-track">
                 <div className="kpi-progress-fill bg-amber" style={{ width: `${avgPredictedFill || 0}%` }}></div>
               </div>
-              <span className="kpi-subtext">Aggregated across <strong>40 smart AMC bins</strong></span>
+              <span className="kpi-subtext">Aggregated across <strong>{bulkData?.predictions?.length || 250} smart AMC bins</strong></span>
             </div>
           </div>
         </div>

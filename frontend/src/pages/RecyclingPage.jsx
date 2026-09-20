@@ -592,7 +592,7 @@ export default function RecyclingPage() {
             AI Recycling &amp; <em>Sustainability</em> Directives
           </h1>
           <p className="editorial-subtitle">
-            Autonomous material segregation intelligence, dual-stream bin allocation, and automated MRF diversion policies across all 40 AMC municipal bins. Click any directive to launch interactive zone maps and technical recycling methods.
+            Autonomous material segregation intelligence, dual-stream bin allocation, and automated MRF diversion policies across all 250 AMC municipal bins. Click any directive to launch interactive zone maps and technical recycling methods.
           </p>
         </div>
         <div className="header-actions">
@@ -634,7 +634,7 @@ export default function RecyclingPage() {
               <div className="kpi-icon-pill icon-dark"><Layers size={16} /></div>
             </div>
             <div className="kpi-metric-wrap">
-              <span className="kpi-number">{summary.total_bins || 40}</span>
+              <span className="kpi-number">{summary.total_bins || 250}</span>
               <span className="kpi-unit">Bins</span>
             </div>
             <div className="kpi-bottom-detail">
