@@ -73,13 +73,13 @@ function ClassifyPage() {
         <div className="header-left">
           <div className="header-category-badge">
             <Sparkles size={13} />
-            Computer Vision Inference · ResNet-18 · 224×224 RGB
+            Computer Vision Inference · LargeNet CNN · 128×128 RGB
           </div>
           <h1 className="editorial-title">
             Visual <em>intelligence</em> for waste classification
           </h1>
           <p className="editorial-subtitle">
-            Upload waste item imagery to instantly infer material category and sorting stream via on-device PyTorch ResNet-18 (ImageNet pretrained).
+            Upload waste item imagery to instantly infer material category and sorting stream via a compact CPU-safe PyTorch model.
           </p>
         </div>
         <div className="header-actions">
@@ -103,14 +103,14 @@ function ClassifyPage() {
               <div className="kpi-icon-pill icon-dark"><Cpu size={16} /></div>
             </div>
             <div className="kpi-metric-wrap">
-              <span className="kpi-number">ResNet-18</span>
-              <span className="kpi-unit">Residual Net</span>
+              <span className="kpi-number">LargeNet</span>
+              <span className="kpi-unit">Compact CNN</span>
             </div>
             <div className="kpi-bottom-detail">
               <div className="kpi-progress-track">
                 <div className="kpi-progress-fill" style={{ width: '100%', background: 'linear-gradient(90deg, #38bdf8, #3b82f6)' }}></div>
               </div>
-              <span className="kpi-subtext">Pretrained on <strong>ImageNet-1K</strong> weights</span>
+              <span className="kpi-subtext">Seven-class waste model running on <strong>CPU</strong></span>
             </div>
           </div>
         </div>
@@ -130,7 +130,7 @@ function ClassifyPage() {
               <div className="kpi-progress-track">
                 <div className="kpi-progress-fill bg-cyan" style={{ width: '100%' }}></div>
               </div>
-              <span className="kpi-subtext">Zero-mean unit-variance normalized tensors</span>
+                    <span className="kpi-subtext">128×128 RGB tensors normalized for inference</span>
             </div>
           </div>
         </div>
@@ -150,7 +150,7 @@ function ClassifyPage() {
               <div className="kpi-progress-track">
                 <div className="kpi-progress-fill bg-emerald" style={{ width: '100%' }}></div>
               </div>
-              <span className="kpi-subtext">Automated dual-stream circular routing</span>
+                    <span className="kpi-subtext">Battery and cardboard map to special processing</span>
             </div>
           </div>
         </div>
@@ -203,7 +203,7 @@ function ClassifyPage() {
                     Accepts PNG, JPG, JPEG, WEBP · Processed in real-time
                   </p>
                   <div className="dropzone-pill">
-                    <Cpu size={12} /> ResNet-18 Model Ready
+                    <Cpu size={12} /> LargeNet CPU Model Ready
                   </div>
                 </div>
               )}
@@ -230,7 +230,7 @@ function ClassifyPage() {
               <div className="classify-loading-state">
                 <div className="modern-spinner"></div>
                 <h4>Analyzing Image Tensor...</h4>
-                <p>Running ResNet-18 deep residual network inference</p>
+                <p>Running compact LargeNet inference on the backend CPU</p>
               </div>
             )}
 
@@ -274,7 +274,7 @@ function ClassifyPage() {
                         .sort(([, a], [, b]) => b - a)
                         .map(([cls, prob]) => {
                           const percent = (prob * 100).toFixed(1);
-                          const isTop = cls === result.category;
+                          const isTop = cls === result.model_class;
                           return (
                             <div key={cls} className={`prob-row ${isTop ? 'top-match' : ''}`}>
                               <div className="prob-header">

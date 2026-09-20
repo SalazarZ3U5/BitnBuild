@@ -1,28 +1,59 @@
 """
-Waste image classifier — uses a pretrained ResNet-18 backbone (ImageNet weights)
-with a fine-tuned 7-class head for waste category prediction.
+Waste image classifier — uses a LargeNet CNN (~1.1 MB) trained on 7 waste
+categories.  Runs entirely on CPU with zero cloud dependency.
 Maps the model's 7 output classes to 6 project categories.
 """
 import io
+import json
 import os
+
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from PIL import Image
-from torchvision import transforms, models
+from torchvision import transforms
 
+# ---------------------------------------------------------------------------
 # Singleton instance
+# ---------------------------------------------------------------------------
 _classifier = None
 
-# The 7 waste class names (matches original training label order)
-CLASS_NAMES = [
-    "battery",
-    "biological",
-    "cardboard",
-    "glass",
-    "metal",
-    "paper",
-    "plastic",
-]
+# ---------------------------------------------------------------------------
+# LargeNet architecture (must match the checkpoint that ships with the repo)
+# ---------------------------------------------------------------------------
+
+class LargeNet(nn.Module):
+    def __init__(self):
+        super(LargeNet, self).__init__()
+        self.name = "large"
+        self.conv1 = nn.Conv2d(3, 5, 5)
+        self.pool = nn.MaxPool2d(2, 2)
+        self.conv2 = nn.Conv2d(5, 10, 5)
+        self.fc1 = nn.Linear(10 * 29 * 29, 32)
+        self.fc2 = nn.Linear(32, 7)
+
+    def forward(self, x):
+        x = self.pool(F.relu(self.conv1(x)))
+        x = self.pool(F.relu(self.conv2(x)))
+        x = x.view(-1, 10 * 29 * 29)
+        x = F.relu(self.fc1(x))
+        x = self.fc2(x)
+        x = x.squeeze(1)  # Flatten to [batch_size]
+        return x
+
+
+# ---------------------------------------------------------------------------
+# Paths & constants
+# ---------------------------------------------------------------------------
+
+MODEL_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+    "models",
+    "waste_classifier",
+)
+
+CONFIG_PATH = os.path.join(MODEL_DIR, "config.json")
+WEIGHTS_PATH = os.path.join(MODEL_DIR, "pytorch_model.bin")
 
 # Mapping from model's 7 classes to project's 6 categories
 MODEL_TO_PROJECT_CATEGORY = {
@@ -35,63 +66,45 @@ MODEL_TO_PROJECT_CATEGORY = {
     "cardboard": "Other",
 }
 
-MODEL_DIR = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
-    "models",
-    "waste_classifier",
-)
 
-# Path to fine-tuned ResNet-18 weights (if available); falls back to ImageNet pretrained
-RESNET_WEIGHTS_PATH = os.path.join(MODEL_DIR, "resnet18_waste.pth")
-
-
-def build_resnet18(num_classes: int = 7, pretrained: bool = True) -> nn.Module:
-    """
-    Build a ResNet-18 model with a replaced final FC layer for num_classes outputs.
-    Uses pretrained ImageNet weights for the backbone.
-    """
-    weights = models.ResNet18_Weights.IMAGENET1K_V1 if pretrained else None
-    model = models.resnet18(weights=weights)
-    # Replace the final fully-connected layer to output num_classes
-    in_features = model.fc.in_features
-    model.fc = nn.Linear(in_features, num_classes)
-    return model
-
+# ---------------------------------------------------------------------------
+# Classifier wrapper
+# ---------------------------------------------------------------------------
 
 class WasteClassifier:
     """
-    Loads a ResNet-18 model and provides a classify(image_bytes) method.
+    Loads the LargeNet CNN model and provides a classify(image_bytes) method.
 
-    - Backbone: ResNet-18 pretrained on ImageNet (torchvision)
-    - Head: Linear(512 → 7) for waste category classification
-    - If a fine-tuned checkpoint exists at models/waste_classifier/resnet18_waste.pth,
-      it will be loaded automatically; otherwise ImageNet pretrained weights are used.
+    - Architecture: LargeNet (2-conv + 2-FC, ~1.1 MB)
+    - Input: 128×128 RGB, normalised to [-1, 1]
+    - Output: 7-class softmax → mapped to 6 project categories
+    - Runs on CPU; no GPU required
     """
 
     def __init__(self):
         self.device = torch.device("cpu")
-        self.class_names = CLASS_NAMES
 
-        # Build ResNet-18 with 7-class head
-        self.model = build_resnet18(num_classes=len(CLASS_NAMES), pretrained=True)
+        # Load config for class names and preprocessing params
+        with open(CONFIG_PATH, "r") as f:
+            config = json.load(f)
 
-        # Load fine-tuned weights if they exist
-        if os.path.exists(RESNET_WEIGHTS_PATH):
-            state_dict = torch.load(RESNET_WEIGHTS_PATH, map_location=self.device)
-            self.model.load_state_dict(state_dict)
+        self.class_names = config["class_names"]
+        mean = config["normalization"]["mean"]
+        std = config["normalization"]["std"]
+        input_size = tuple(config["input_size"])  # (128, 128)
 
+        # Build model and load trained weights
+        self.model = LargeNet()
+        state_dict = torch.load(WEIGHTS_PATH, map_location=self.device, weights_only=True)
+        self.model.load_state_dict(state_dict)
         self.model.to(self.device)
         self.model.eval()
 
-        # ResNet-18 standard transform: 224×224, ImageNet normalization
+        # Preprocessing pipeline matching training config
         self.transform = transforms.Compose([
-            transforms.Resize(256),
-            transforms.CenterCrop(224),
+            transforms.Resize(input_size),
             transforms.ToTensor(),
-            transforms.Normalize(
-                mean=[0.485, 0.456, 0.406],
-                std=[0.229, 0.224, 0.225],
-            ),
+            transforms.Normalize(mean, std),
         ])
 
     def classify(self, image_bytes: bytes) -> dict:
@@ -124,7 +137,7 @@ class WasteClassifier:
             "confidence": conf,
             "model_class": model_class,
             "all_probabilities": all_probs,
-            "model_name": "ResNet-18",
+            "model_name": "LargeNet CNN",
         }
 
 
