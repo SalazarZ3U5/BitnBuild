@@ -137,6 +137,11 @@ flowchart TD
 | <img src="./docs/screenshots/waste_forecasting.png" alt="Predictive AI Fill-Level Forecasting" width="100%"/> | <img src="./docs/screenshots/ai_classifier.png" alt="On-Device LargeNet CNN Image Classifier" width="100%"/> |
 | *Time-series regression forecasting dynamic overflow windows up to T+72h* | *Embedded 1.1 MB PyTorch CNN for real-time edge 6-class waste classification* |
 
+| Circular AI Material Diversion Directives | Technical Recycling Methods & MRF Protocols |
+| :---: | :---: |
+| <img src="./docs/screenshots/recycling_directive_map.png" alt="Circular AI Zone Directives & Landmark Map" width="100%"/> | <img src="./docs/screenshots/recycling_methods_protocols.png" alt="Technical Circular Recycling Protocols" width="100%"/> |
+| *Interactive zone sensor grid, monitored landmark telemetry, and diversion strategies* | *3 official circular recovery engineering methods per waste stream with quantified impacts* |
+
 </div>
 
 <br/>
@@ -239,6 +244,20 @@ The system is calibrated with **40 authentic landmark bin locations** across 5 a
 * **Embedded LargeNet Architecture**: Lightweight (1.1 MB) neural network trained to classify waste into 6 primary streams: Plastic, Organic, Paper, Glass, Metal, and Residual.
 * **Zero Cloud Latency**: Instantaneous local edge inference with confidence distribution metrics and automated bin sorting guidance.
 
+### 6. Circular AI Recycling Directives & Material Recovery Protocols
+* **Autonomous Policy Generation**: Continuous evaluation of segregation ratios, cross-contamination, and fill velocities across all 5 municipal zones to recommend actionable sorting directives.
+* **Interactive Zone Sensor Grid**: Modal deep-dive centering Leaflet maps directly onto the target zone's bins, providing live telemetry meters, average fills, and critical overflow counts.
+* **Technical Recycling Standards**: 3 specialized circular recovery protocols per material stream (Plastic, Organic, Paper, Metal, and Residuals), mapping streams to certified AMC facilities (Gyaspur MRF, Vastrapur Biomethanation, Pirana WtE).
+
+<div align="center">
+
+| Interactive Zone Sensor Grid & Bins | Technical Recycling Recovery Protocols |
+| :---: | :---: |
+| <img src="./docs/screenshots/recycling_directive_map.png" alt="Interactive Zone Sensor Grid" width="100%"/> | <img src="./docs/screenshots/recycling_methods_protocols.png" alt="Technical Recycling Methods" width="100%"/> |
+| *Real-time landmark bin telemetry, zone centroid map, and diversion directives* | *3 certified engineering recycling methods per waste stream with quantified impacts* |
+
+</div>
+
 <br/>
 
 ---
@@ -248,37 +267,31 @@ The system is calibrated with **40 authentic landmark bin locations** across 5 a
 The platform includes a built-in IoT simulation and streaming engine that models the dynamic flow of municipal waste generation across Ahmedabad. It enables operators and evaluators to stress-test collection logistics, observe cascading overflow events, and evaluate real-time re-routing without waiting for real-world hours to elapse.
 
 ```mermaid
-sequenceDiagram
-    autonumber
-    actor Admin as Municipal Dispatcher
-    participant UI as Dashboard Control Center
-    participant WS as WebSocket Gateway (/ws)
-    participant Sim as FastAPI Simulation Engine (/simulation)
-    participant DB as PostgreSQL / PostGIS Store
-    participant CVRP as Google OR-Tools CVRP Engine
-
-    Admin->>UI: Toggle "Stream Live Telemetry" or Click "+1h Tick"
-    UI->>Sim: POST /simulation/toggle or POST /simulation/tick
-    activate Sim
-    Sim->>Sim: Step synthetic clock & compute diurnal fill deltas
-    Note over Sim: Special #1 Producer: delta 12-18% / step<br/>Nominal bins: delta 5-11% / step
-    Sim->>DB: INSERT into fill_readings (sawtooth historical log)
-    Sim->>DB: UPDATE bins (current_fill_percent, battery, status)
-    Sim->>DB: Evaluate thresholds -> Generate alerts (critical / warning)
-    Sim-->>WS: Broadcast telemetry refresh trigger
-    deactivate Sim
-    
-    WS-->>UI: Real-time broadcast push (Zero Page Reload)
-    activate UI
-    UI->>UI: Update Top HUD KPIs (Liters, Critical Count)
-    UI->>UI: Recalculate Urgency Priority Queue
-    UI->>UI: Transition Map Marker Colors & Pulsating Fire Rings
-    opt Critical Threshold Breached
-        UI->>UI: Trigger Glassmorphic #1 Producer Alert Banner
+flowchart TD
+    subgraph Controls ["1. Dispatcher Command"]
+        Admin(["Municipal Dispatcher"]) -->|"Toggle Stream or +1h Tick"| UI["Dashboard Control Center"]
     end
-    UI->>CVRP: Re-optimize collection routes for active trucks
-    CVRP-->>UI: Return updated road-snapped bridge route polylines
-    deactivate UI
+
+    subgraph Simulation ["2. Backend State Machine"]
+        UI -->|"POST /simulation/tick"| Sim["FastAPI Simulation Engine"]
+        Sim -->|"Advance Clock"| Calc["Compute Diurnal Fill Deltas"]
+        Calc -->|"INSERT History"| Readings[("fill_readings")]
+        Calc -->|"UPDATE Current Fill"| Bins[("bins table")]
+        Calc -->|"Evaluate Thresholds"| Alerts[("alerts table")]
+    end
+
+    subgraph Broadcast ["3. Real-Time Telemetry Push"]
+        Sim -->|"Trigger Broadcast Callback"| WS["WebSocket Gateway"]
+        WS -->|"Instant Push Stream (Zero Reload)"| UI
+    end
+
+    subgraph Reactivity ["4. Client UI Reactivity & Routing"]
+        UI -->|"Update Liters & Critical Bins"| HUD["Top HUD KPI Cards"]
+        UI -->|"Recalculate Weighted Urgency"| Rank["Priority Queue"]
+        UI -->|"Animate Fire Rings & Status Pins"| Map["GIS Map Visualization"]
+        UI -->|"Trigger Urgent Alert"| Banner["Glassmorphic Hotspot Alert"]
+        UI -->|"Re-optimize Active Stops"| CVRP["Google OR-Tools CVRP Engine"]
+    end
 ```
 
 ### Complete Execution Path: Step-by-Step
