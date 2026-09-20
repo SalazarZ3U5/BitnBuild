@@ -291,7 +291,7 @@ def optimize_routes(db: Session, fill_threshold: float = 50.0) -> dict:
     Generate optimized routes for today's collection.
 
     1. Select bins needing collection (critical or >= fill_threshold).
-    2. Ensure 4 active vehicles covering Ahmedabad zones.
+    2. Ensure 10 active vehicles covering Ahmedabad zones.
     3. Cluster bins by vehicle depot affinity with river-awareness.
     4. Optimize stop ordering for each vehicle.
     5. Fetch road network geometry from OSRM following actual streets and bridges.
@@ -319,9 +319,9 @@ def optimize_routes(db: Session, fill_threshold: float = 50.0) -> dict:
     if not bins:
         return {"message": "No bins found in database", "routes": []}
 
-    # Ensure 4 active vehicles
+    # Ensure 10 active vehicles
     vehicles = db.query(Vehicle).filter(Vehicle.is_active == True).order_by(Vehicle.id).all()
-    if len(vehicles) < 4:
+    if len(vehicles) < 10:
         from app.simulation.generate_synthetic_data import generate_vehicles
         db.query(Vehicle).delete()
         vehicles = generate_vehicles(db)
@@ -330,7 +330,7 @@ def optimize_routes(db: Session, fill_threshold: float = 50.0) -> dict:
     if not vehicles:
         return {"message": "No active vehicles", "routes": []}
 
-    num_vehicles = min(len(vehicles), 4)
+    num_vehicles = min(len(vehicles), 10)
     active_vehicles = vehicles[:num_vehicles]
 
     # Cluster bins by vehicle depot / zone affinity
@@ -505,7 +505,7 @@ def optimize_routes_predictive(db: Session, dispatch_at_hours: float = 12.0) -> 
 
     pred_lookup = {p["bin_id"]: p.get("predicted_fill_percent", 0) for p in predictions}
 
-    num_vehicles = min(len(vehicles), 4)
+    num_vehicles = min(len(vehicles), 10)
     active_vehicles = vehicles[:num_vehicles]
 
     clusters = _cluster_bins_by_vehicle(bins_to_collect, active_vehicles)

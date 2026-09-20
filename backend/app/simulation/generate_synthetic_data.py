@@ -417,19 +417,31 @@ def generate_fill_readings(db: Session, bins: list[Bin], days: int = 20):
 
 
 def generate_vehicles(db: Session) -> list[Vehicle]:
-    """Create 4 AMC collection vehicles with depots covering the city."""
+    """Create 10 AMC collection vehicles with depots covering the city."""
     vehicles = []
     depot_positions = [
-        (CENTER_LAT + 0.012, CENTER_LNG - 0.015),  # West Depot (Ashram Road / Navrangpura)
-        (CENTER_LAT - 0.020, CENTER_LNG + 0.025),  # South Depot (Kankaria / Danilimda)
-        (CENTER_LAT + 0.025, CENTER_LNG - 0.035),  # North-West Depot (Bodakdev / SG Highway)
-        (CENTER_LAT - 0.010, CENTER_LNG + 0.035),  # East Depot (Maninagar / Nikol)
+        (CENTER_LAT + 0.012, CENTER_LNG - 0.015),   # West Depot (Ashram Road / Navrangpura)
+        (CENTER_LAT + 0.025, CENTER_LNG - 0.035),   # North-West Depot (Bodakdev / SG Highway)
+        (CENTER_LAT - 0.020, CENTER_LNG + 0.025),   # Central Depot (Kankaria / Riverfront)
+        (CENTER_LAT - 0.010, CENTER_LNG + 0.035),   # East Depot (Nikol / Bapunagar)
+        (CENTER_LAT - 0.012, CENTER_LNG - 0.067),   # South-West Depot (Prahlad Nagar / Satellite)
+        (CENTER_LAT + 0.050, CENTER_LNG - 0.000),   # North Depot (Sabarmati / Ranip)
+        (CENTER_LAT - 0.024, CENTER_LNG + 0.039),   # South Depot (Maninagar / Isanpur)
+        (CENTER_LAT + 0.042, CENTER_LNG + 0.074),   # North-East Depot (Naroda / Thakkarbapa)
+        (CENTER_LAT + 0.072, CENTER_LNG - 0.035),   # West Extension Depot (Gota / Chandlodia)
+        (CENTER_LAT - 0.054, CENTER_LNG + 0.060),   # South-East Depot (Vatva / Odhav)
     ]
     names = [
         "AMC Swachhata Vahini 01",
         "AMC Swachhata Vahini 02",
         "AMC Swachhata Vahini 03",
         "AMC Swachhata Vahini 04",
+        "AMC Swachhata Vahini 05",
+        "AMC Swachhata Vahini 06",
+        "AMC Swachhata Vahini 07",
+        "AMC Swachhata Vahini 08",
+        "AMC Swachhata Vahini 09",
+        "AMC Swachhata Vahini 10",
     ]
 
     for i, (dlat, dlng) in enumerate(depot_positions):
