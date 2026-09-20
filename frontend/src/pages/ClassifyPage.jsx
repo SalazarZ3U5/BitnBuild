@@ -93,6 +93,69 @@ function ClassifyPage() {
         </div>
       </div>
 
+      {/* ── Vision HUD KPI Matrix ── */}
+      <div className="hud-kpi-matrix-3" style={{ marginBottom: '24px' }}>
+        <div className="hud-kpi-card kpi-dark">
+          <div className="kpi-card-glow-bg"></div>
+          <div className="kpi-card-inner">
+            <div className="kpi-top">
+              <span className="kpi-tag">Vision Architecture</span>
+              <div className="kpi-icon-pill icon-dark"><Cpu size={16} /></div>
+            </div>
+            <div className="kpi-metric-wrap">
+              <span className="kpi-number">ResNet-18</span>
+              <span className="kpi-unit">Residual Net</span>
+            </div>
+            <div className="kpi-bottom-detail">
+              <div className="kpi-progress-track">
+                <div className="kpi-progress-fill" style={{ width: '100%', background: 'linear-gradient(90deg, #38bdf8, #3b82f6)' }}></div>
+              </div>
+              <span className="kpi-subtext">Pretrained on <strong>ImageNet-1K</strong> weights</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="hud-kpi-card">
+          <div className="kpi-card-glow-bg glow-cyan"></div>
+          <div className="kpi-card-inner">
+            <div className="kpi-top">
+              <span className="kpi-tag">Tensor Resolution</span>
+              <div className="kpi-icon-pill icon-cyan"><FileImage size={16} /></div>
+            </div>
+            <div className="kpi-metric-wrap">
+              <span className="kpi-number text-cyan-gradient">224×224</span>
+              <span className="kpi-unit-pill pill-cyan">RGB 3-Channel</span>
+            </div>
+            <div className="kpi-bottom-detail">
+              <div className="kpi-progress-track">
+                <div className="kpi-progress-fill bg-cyan" style={{ width: '100%' }}></div>
+              </div>
+              <span className="kpi-subtext">Zero-mean unit-variance normalized tensors</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="hud-kpi-card">
+          <div className="kpi-card-glow-bg glow-emerald"></div>
+          <div className="kpi-card-inner">
+            <div className="kpi-top">
+              <span className="kpi-tag">Diversion Target</span>
+              <div className="kpi-icon-pill icon-emerald"><Sparkles size={16} /></div>
+            </div>
+            <div className="kpi-metric-wrap">
+              <span className="kpi-number text-emerald-gradient">6 Streams</span>
+              <span className="kpi-unit-pill pill-emerald">Plastic · Metal...</span>
+            </div>
+            <div className="kpi-bottom-detail">
+              <div className="kpi-progress-track">
+                <div className="kpi-progress-fill bg-emerald" style={{ width: '100%' }}></div>
+              </div>
+              <span className="kpi-subtext">Automated dual-stream circular routing</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="classify-layout-editorial">
         {/* Left: Upload card */}
         <div className="card classify-upload-card">

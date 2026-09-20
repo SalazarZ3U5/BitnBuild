@@ -118,61 +118,89 @@ export default function ForecastPage() {
         </div>
       </div>
 
-      {/* ── Predictive Horizon KPI Bar ─────────────────────────────────────── */}
-      <div className="forecast-kpis-grid">
-        <div className="stat-card stat-total">
-          <div className="stat-top">
-            <span className="stat-tag">Forecast Horizon</span>
-            <div className="stat-icon-wrapper"><Clock size={18} /></div>
-          </div>
-          <div className="stat-body">
-            <div className="stat-value">+{heatmapHoursAhead}h</div>
-            <div className="stat-label">Projected Future Time</div>
-          </div>
-          <div className="stat-footer">
-            <span className="stat-trend positive">Linear + Historical Drift Model</span>
-          </div>
-        </div>
-
-        <div className="stat-card stat-critical">
-          <div className="stat-top">
-            <span className="stat-tag tag-urgent">Projected Critical</span>
-            <div className="stat-icon-wrapper icon-critical"><AlertTriangle size={18} /></div>
-          </div>
-          <div className="stat-body">
-            <div className="stat-value text-critical">{criticalForecastCount}</div>
-            <div className="stat-label">Bins Predicted &gt;80%</div>
-          </div>
-          <div className="stat-footer">
-            <span className="stat-trend negative">Require Proactive Routing</span>
+      {/* ── Predictive Horizon HUD KPI Matrix ─────────────────────────────── */}
+      <div className="hud-kpi-matrix" style={{ marginBottom: '24px' }}>
+        {/* KPI 1: Forecast Horizon */}
+        <div className="hud-kpi-card kpi-dark">
+          <div className="kpi-card-glow-bg"></div>
+          <div className="kpi-card-inner">
+            <div className="kpi-top">
+              <span className="kpi-tag">Forecast Horizon</span>
+              <div className="kpi-icon-pill icon-dark"><Clock size={16} /></div>
+            </div>
+            <div className="kpi-metric-wrap">
+              <span className="kpi-number">+{heatmapHoursAhead}h</span>
+              <span className="kpi-unit">Lookahead</span>
+            </div>
+            <div className="kpi-bottom-detail">
+              <div className="kpi-progress-track">
+                <div className="kpi-progress-fill" style={{ width: `${Math.min((heatmapHoursAhead / 24) * 100, 100)}%`, background: 'linear-gradient(90deg, #38bdf8, #3b82f6)' }}></div>
+              </div>
+              <span className="kpi-subtext">Linear + <strong>Historical Drift Model</strong></span>
+            </div>
           </div>
         </div>
 
-        <div className="stat-card stat-fill">
-          <div className="stat-top">
-            <span className="stat-tag">Projected Avg Fill</span>
-            <div className="stat-icon-wrapper icon-fill"><TrendingUp size={18} /></div>
-          </div>
-          <div className="stat-body">
-            <div className="stat-value">{heatmapData.length > 0 || avgPredictedFill > 0 ? `${avgPredictedFill}%` : '--%'}</div>
-            <div className="stat-label">Fleet Capacity in +{heatmapHoursAhead}h</div>
-          </div>
-          <div className="stat-footer">
-            <span className="stat-trend">Across 40 Monitored AMC Bins</span>
+        {/* KPI 2: Projected Critical */}
+        <div className="hud-kpi-card">
+          <div className="kpi-card-glow-bg glow-coral"></div>
+          <div className="kpi-card-inner">
+            <div className="kpi-top">
+              <span className="kpi-tag" style={{ color: '#e11d48' }}>Projected Critical</span>
+              <div className="kpi-icon-pill icon-coral"><AlertTriangle size={16} /></div>
+            </div>
+            <div className="kpi-metric-wrap">
+              <span className="kpi-number text-coral-gradient">{criticalForecastCount}</span>
+              <span className="kpi-unit-pill pill-coral">Predicted &gt;80%</span>
+            </div>
+            <div className="kpi-bottom-detail">
+              <div className="kpi-progress-track">
+                <div className="kpi-progress-fill bg-coral" style={{ width: `${Math.min(criticalForecastCount * 6, 100)}%` }}></div>
+              </div>
+              <span className="kpi-subtext">Require <strong>proactive route reallocation</strong></span>
+            </div>
           </div>
         </div>
 
-        <div className="stat-card stat-routes">
-          <div className="stat-top">
-            <span className="stat-tag tag-dispatch">Proactive CVRP</span>
-            <div className="stat-icon-wrapper icon-routes"><Truck size={18} /></div>
+        {/* KPI 3: Projected Avg Fill */}
+        <div className="hud-kpi-card">
+          <div className="kpi-card-glow-bg glow-amber"></div>
+          <div className="kpi-card-inner">
+            <div className="kpi-top">
+              <span className="kpi-tag">Projected Avg Fill</span>
+              <div className="kpi-icon-pill icon-amber"><TrendingUp size={16} /></div>
+            </div>
+            <div className="kpi-metric-wrap">
+              <span className="kpi-number text-amber-gradient">{heatmapData.length > 0 || avgPredictedFill > 0 ? `${avgPredictedFill}%` : '--%'}</span>
+              <span className="kpi-unit-pill pill-amber">Fleet Avg</span>
+            </div>
+            <div className="kpi-bottom-detail">
+              <div className="kpi-progress-track">
+                <div className="kpi-progress-fill bg-amber" style={{ width: `${avgPredictedFill || 0}%` }}></div>
+              </div>
+              <span className="kpi-subtext">Aggregated across <strong>40 smart AMC bins</strong></span>
+            </div>
           </div>
-          <div className="stat-body">
-            <div className="stat-value">{plannedRoutes ? plannedRoutes.length : 'Ready'}</div>
-            <div className="stat-label">{plannedRoutes ? 'Pre-Dispatched Routes' : 'A* Routes on Demand'}</div>
-          </div>
-          <div className="stat-footer">
-            <span className="stat-trend positive">Stops ordered by A* Pathfinding</span>
+        </div>
+
+        {/* KPI 4: Proactive CVRP */}
+        <div className="hud-kpi-card">
+          <div className="kpi-card-glow-bg glow-cyan"></div>
+          <div className="kpi-card-inner">
+            <div className="kpi-top">
+              <span className="kpi-tag">Proactive Routing</span>
+              <div className="kpi-icon-pill icon-cyan"><Truck size={16} /></div>
+            </div>
+            <div className="kpi-metric-wrap">
+              <span className="kpi-number text-cyan-gradient">{plannedRoutes ? plannedRoutes.length : 'Ready'}</span>
+              <span className="kpi-unit-pill pill-cyan">A* Pre-Plan</span>
+            </div>
+            <div className="kpi-bottom-detail">
+              <div className="kpi-progress-track">
+                <div className="kpi-progress-fill bg-cyan" style={{ width: '100%' }}></div>
+              </div>
+              <span className="kpi-subtext">Stops sequenced by <strong>predictive urgency</strong></span>
+            </div>
           </div>
         </div>
       </div>

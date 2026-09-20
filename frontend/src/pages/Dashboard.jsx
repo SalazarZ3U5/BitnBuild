@@ -34,20 +34,44 @@ import api from '../api';
 import BinMap from '../components/BinMap';
 import StatsCharts from '../components/StatsCharts';
 import TruckDetailModal from '../components/TruckDetailModal';
-import { aStarOptimizeStops } from '../utils/astar';
-import { AMC_FLEET, getFleetVehicleMeta } from '../data/fleetData';
+import { useFleet } from '../context/FleetContext';
+import { DEFAULT_BINS } from '../data/defaultBins';
 
 const TRUCK_COLORS = ['#2563eb', '#8b5cf6', '#f59e0b', '#06b6d4'];
 
 function Dashboard() {
   const navigate = useNavigate();
-  const [bins, setBins] = useState([]);
-  const [routes, setRoutes] = useState([]);
+  const {
+    routes,
+    setRoutes,
+    routeLoading,
+    truckStates,
+    collectionActive,
+    collectionComplete,
+    totalWasteCollected,
+    startCollection,
+    resetFleet,
+    fetchFleetRoutes,
+    selectedTruck,
+    setSelectedTruck,
+    activeTrucks,
+    totalStopsDone,
+    totalPlannedStops,
+  } = useFleet();
+
+  const [bins, setBins] = useState(() => {
+    try {
+      const cached = localStorage.getItem('amc_bins_cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+    return DEFAULT_BINS;
+  });
   const [alerts, setAlerts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [routeLoading, setRouteLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [lastRefreshed, setLastRefreshed] = useState(new Date());
-  const [selectedTruck, setSelectedTruck] = useState(null);
 
   // Special Top Producer Alert
   const specialTopAlert = useMemo(() => {
@@ -61,12 +85,8 @@ function Dashboard() {
   const [simMessage, setSimMessage] = useState(null);
   const [simBoardExpanded, setSimBoardExpanded] = useState(true);
 
-  // All-critical + multi-truck collection state
+  // All-critical state
   const [allCritical, setAllCritical] = useState(false);
-  const [collectionActive, setCollectionActive] = useState(false);
-  const [collectionComplete, setCollectionComplete] = useState(false);
-  const [totalWasteCollected, setTotalWasteCollected] = useState(0);
-  const [truckStates, setTruckStates] = useState([]);
 
   // ── Heatmap + Predictive Routing state ─────────────────────────────────────
   const [heatmapData, setHeatmapData] = useState([]);
@@ -83,67 +103,40 @@ function Dashboard() {
     return bins.map(b => tierMap[b.id] ? { ...b, _hotspotTier: tierMap[b.id] } : b);
   }, [bins, hotspots]);
 
-
   const hasAutoTriggered = useRef(false);
-  const truckStatesRef = useRef([]);
-  const collectionActiveRef = useRef(false);
-  const collectionIntervalRef = useRef(null);
 
-  // Keep refs in sync
-  useEffect(() => { truckStatesRef.current = truckStates; }, [truckStates]);
-  useEffect(() => { collectionActiveRef.current = collectionActive; }, [collectionActive]);
+  // Listen for emptied bins during collection tick
+  useEffect(() => {
+    const handleBinsEmptied = (e) => {
+      const names = e.detail?.binNames || [];
+      if (names.length > 0) {
+        setBins(prev => prev.map(b => names.includes(b.name) ? { ...b, current_fill_percent: 5.0 } : b));
+      }
+    };
+    window.addEventListener('amc:bins-emptied', handleBinsEmptied);
+    return () => window.removeEventListener('amc:bins-emptied', handleBinsEmptied);
+  }, []);
 
   const fetchData = useCallback(async () => {
     // During active collection, skip full bin reload to preserve real-time emptied visual states
-    if (collectionActiveRef.current) return;
+    if (collectionActive) return;
     try {
-      const [binsRes, alertsRes, routesRes] = await Promise.all([
+      const [binsRes, alertsRes] = await Promise.all([
         api.get('/bins'),
         api.get('/alerts'),
-        api.get('/routes/today?fill_threshold=50.0').catch(() => ({ data: { routes: [] } }))
       ]);
-      setBins(binsRes.data || []);
+      if (binsRes.data && Array.isArray(binsRes.data) && binsRes.data.length > 0) {
+        setBins(binsRes.data);
+        try { localStorage.setItem('amc_bins_cache', JSON.stringify(binsRes.data)); } catch (e) {}
+      }
       setAlerts(alertsRes.data || []);
-      const fetchedRoutes = routesRes.data?.routes || [];
-      setRoutes(fetchedRoutes);
-
-      setTruckStates(prev => {
-        return AMC_FLEET.map((fleetMeta, idx) => {
-          const matchingRoute = fetchedRoutes[idx] || null;
-          const stops = matchingRoute ? matchingRoute.stops : [];
-          const existing = prev[idx] || {};
-
-          return {
-            routeIdx: idx,
-            vehicleName: fleetMeta.vehicleName,
-            plateNumber: fleetMeta.plateNumber,
-            model: fleetMeta.model,
-            capacityLiters: fleetMeta.capacityLiters,
-            fuelType: fleetMeta.fuelType,
-            driver: fleetMeta.driver,
-            zone: fleetMeta.zone,
-            color: fleetMeta.color,
-            position: existing.position || (matchingRoute?.depot ? { lat: matchingRoute.depot.lat, lng: matchingRoute.depot.lng } : { lat: fleetMeta.depotCoords[0], lng: fleetMeta.depotCoords[1] }),
-            currentStopIdx: existing.currentStopIdx !== undefined ? existing.currentStopIdx : -1,
-            totalStops: stops.length || 10,
-            wasteCollected: existing.wasteCollected || 0,
-            stopsCompleted: existing.stopsCompleted || [],
-            stops: stops.length > 0 ? stops : (existing.stops || []),
-            done: existing.done || false,
-            astarMetrics: matchingRoute?.astarMetrics || existing.astarMetrics || { totalDistance: matchingRoute?.total_distance_km || 13.5, nodesExplored: 10 },
-            speed: existing.speed || '0 km/h (Standby)',
-            status: existing.status || 'Ready at Depot Hub',
-          };
-        });
-      });
-
       setLastRefreshed(new Date());
     } catch (err) {
-      console.error('Failed to fetch data:', err);
+      console.warn('Telemetry sync fallback (using cached/baseline grid):', err.message);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [collectionActive]);
 
   const fetchSimStatus = useCallback(async () => {
     try {
@@ -220,20 +213,12 @@ function Dashboard() {
 
   const handleResetSimulation = async () => {
     setSimLoading(true);
-    if (collectionIntervalRef.current) {
-      clearInterval(collectionIntervalRef.current);
-      collectionIntervalRef.current = null;
-    }
+    resetFleet();
     try {
       await api.post('/simulation/reset');
       showSimToast('↺ Entire simulation reset: All 40 AMC bins restored to baseline nominal (green <40%). Ready to re-run!');
-      setRoutes([]);
       setAllCritical(false);
       hasAutoTriggered.current = false;
-      setCollectionActive(false);
-      setCollectionComplete(false);
-      setTruckStates([]);
-      setTotalWasteCollected(0);
       setSimRunning(false);
       setSimStep(0);
       await fetchData();
@@ -249,22 +234,17 @@ function Dashboard() {
     if (hasAutoTriggered.current) return;
     hasAutoTriggered.current = true;
     
-    setRouteLoading(true);
     showSimToast('🚨 All bins critical! Auto-computing 4 CVRP + A* fleet routes covering all 40 bins...');
     
     try {
-      const res = await api.get('/routes/today?fill_threshold=50.0');
-      const generatedRoutes = res.data.routes || [];
-      setRoutes(generatedRoutes);
-      if (generatedRoutes.length > 0) {
+      const generatedRoutes = await fetchFleetRoutes();
+      if (generatedRoutes && generatedRoutes.length > 0) {
         showSimToast(`✅ ${generatedRoutes.length} A* optimized fleet routes ready! Click "Dispatch Fleet" to begin collection.`);
       }
     } catch (err) {
       console.error('Failed to auto-generate routes:', err);
-    } finally {
-      setRouteLoading(false);
     }
-  }, []);
+  }, [fetchFleetRoutes]);
 
   useEffect(() => {
     if (allCritical && !hasAutoTriggered.current && !collectionActive && !collectionComplete) {
@@ -272,158 +252,12 @@ function Dashboard() {
     }
   }, [allCritical, autoGenerateRoutes, collectionActive, collectionComplete]);
 
-  // ── Start multi-truck collection with A* optimization ─────────────────────
-  const startCollection = useCallback(async () => {
-    if (routes.length === 0) return;
-
+  // Dispatch multi-truck collection via shared FleetContext
+  const handleDispatch = async () => {
     showSimToast('🧠 Running A* pathfinding optimization on all 4 fleet routes...');
-    await new Promise(r => setTimeout(r, 600));
-
-    // Support all 4 trucks/paths
-    const activeRoutes = routes.slice(0, 4);
-
-    // Apply A* stop ordering to each route starting from its depot
-    const optimizedRoutes = activeRoutes.map(route => {
-      if (!route.depot || route.stops.length <= 1) {
-        return { ...route, astarMetrics: { algorithm: 'A* (direct)', nodesExplored: 1, totalDistance: route.total_distance_km || 0 } };
-      }
-      const sorted = [...route.stops].sort((a, b) => a.stop_order - b.stop_order);
-      const result = aStarOptimizeStops(sorted, route.depot);
-      return {
-        ...route,
-        stops: result.stops.map((s, i) => ({ ...s, stop_order: i })),
-        astarMetrics: result,
-      };
-    });
-
-    showSimToast(`✅ A* optimized ${optimizedRoutes.length} routes — dispatching fleet!`);
-
-    // Initialize truck states with full fleet metadata for all vehicles simultaneously
-    const states = optimizedRoutes.map((route, idx) => {
-      const fleetMeta = AMC_FLEET[idx] || getFleetVehicleMeta(idx);
-      return {
-        routeIdx: idx,
-        vehicleName: route.vehicle_name || fleetMeta.vehicleName,
-        plateNumber: fleetMeta.plateNumber,
-        model: fleetMeta.model,
-        capacityLiters: fleetMeta.capacityLiters,
-        fuelType: fleetMeta.fuelType,
-        driver: fleetMeta.driver,
-        zone: fleetMeta.zone,
-        color: TRUCK_COLORS[idx % TRUCK_COLORS.length],
-        position: route.depot ? { lat: route.depot.lat, lng: route.depot.lng } : { lat: fleetMeta.depotCoords[0], lng: fleetMeta.depotCoords[1] },
-        currentStopIdx: -1,
-        totalStops: route.stops.length,
-        wasteCollected: 0,
-        stopsCompleted: [],
-        stops: [...route.stops].sort((a, b) => a.stop_order - b.stop_order),
-        done: false,
-        astarMetrics: route.astarMetrics,
-        speed: '28 km/h (Active)',
-        status: 'En Route',
-      };
-    });
-
-    truckStatesRef.current = states;
-    setTruckStates(states);
-    setCollectionActive(true);
-    setCollectionComplete(false);
-    setTotalWasteCollected(0);
-  }, [routes]);
-
-  // ── Collection tick — advances ALL trucks simultaneously ──────────────────
-  useEffect(() => {
-    if (!collectionActive || collectionComplete) return;
-
-    // Initial delay before first movement
-    const initialDelay = setTimeout(() => {
-      const interval = setInterval(() => {
-        const current = truckStatesRef.current;
-        if (!current.length) return;
-
-        const binsToReset = [];
-
-        const updated = current.map(truck => {
-          if (truck.done) return truck;
-
-          const nextIdx = truck.currentStopIdx + 1;
-
-          if (nextIdx >= truck.stops.length) {
-            return { 
-              ...truck, 
-              done: true, 
-              speed: '0 km/h (Docked)', 
-              status: 'Completed Route — Returned to Depot' 
-            };
-          }
-
-          const stop = truck.stops[nextIdx];
-          const waste = Math.round((stop.fill_percent / 100) * 240);
-          binsToReset.push(stop.bin_name);
-          const currentSpeed = 22 + Math.floor(Math.random() * 14);
-
-          return {
-            ...truck,
-            currentStopIdx: nextIdx,
-            position: { lat: stop.lat, lng: stop.lng },
-            speed: `${currentSpeed} km/h (Navigating)`,
-            status: `Servicing Stop #${nextIdx + 1} (${stop.bin_name})`,
-            wasteCollected: truck.wasteCollected + waste,
-            stopsCompleted: [...truck.stopsCompleted, {
-              binName: stop.bin_name,
-              wasteCollected: waste,
-              vehicleName: truck.vehicleName,
-              fillPercent: stop.fill_percent,
-            }],
-          };
-        });
-
-        truckStatesRef.current = updated;
-        setTruckStates([...updated]);
-
-        // Empty collected bins down to residual 5% (turns them GREEN and reduces fill %)
-        if (binsToReset.length > 0) {
-          setBins(prev => prev.map(bin => {
-            if (binsToReset.includes(bin.name)) {
-              return { ...bin, current_fill_percent: 5.0 };
-            }
-            return bin;
-          }));
-
-          // Synchronize with backend database immediately
-          api.post('/simulation/empty-bins', { bin_names: binsToReset }).catch(err => {
-            console.warn('Backend empty-bins sync failed', err);
-          });
-        }
-
-        // Update total waste collected
-        const total = updated.reduce((sum, t) => sum + t.wasteCollected, 0);
-        setTotalWasteCollected(total);
-
-        // Check if all trucks are done
-        if (updated.every(t => t.done)) {
-          clearInterval(interval);
-          collectionIntervalRef.current = null;
-          setTimeout(() => {
-            setCollectionComplete(true);
-            setCollectionActive(false);
-            // Fire global route-complete event for RealtimeNotifBar
-            window.dispatchEvent(new CustomEvent('amc:route-complete', {
-              detail: { message: `All ${updated.length} AMC trucks completed their collection routes successfully.` }
-            }));
-          }, 800);
-        }
-      }, 1800);
-
-      collectionIntervalRef.current = interval;
-      return () => {
-        clearInterval(interval);
-        collectionIntervalRef.current = null;
-      };
-    }, 1000);
-
-    return () => clearTimeout(initialDelay);
-  }, [collectionActive, collectionComplete]);
+    await startCollection();
+    showSimToast('✅ A* optimized routes — dispatching fleet!');
+  };
 
   // ── WebSocket + polling ───────────────────────────────────────────────────
   useEffect(() => {
@@ -442,7 +276,7 @@ function Dashboard() {
         try {
           const data = JSON.parse(event.data);
           if (data.type === 'bin_update') {
-            if (!collectionActiveRef.current && data.bins) {
+            if (!collectionActive && data.bins) {
               setBins(data.bins);
             }
             if (data.alerts) {
@@ -475,14 +309,10 @@ function Dashboard() {
   }, [fetchData, fetchSimStatus]);
 
   const generateRoutes = async () => {
-    setRouteLoading(true);
-    try {
-      const res = await api.get('/routes/today?fill_threshold=50.0');
-      setRoutes(res.data.routes || []);
-    } catch (err) {
-      console.error('Failed to generate routes:', err);
-    } finally {
-      setRouteLoading(false);
+    showSimToast('Computing 4 A* + CVRP fleet routes across Ahmedabad...');
+    const newRoutes = await fetchFleetRoutes();
+    if (newRoutes && newRoutes.length > 0) {
+      showSimToast(`✅ ${newRoutes.length} A* optimized fleet routes ready! Click "Dispatch Fleet" to begin collection.`);
     }
   };
 
@@ -526,9 +356,6 @@ function Dashboard() {
     : 0;
 
   const activeAlerts = alerts.filter(a => a.is_active).length;
-  const activeTrucks = truckStates.filter(t => !t.done).length;
-  const totalStopsDone = truckStates.reduce((s, t) => s + t.stopsCompleted.length, 0);
-  const totalPlannedStops = truckStates.reduce((s, t) => s + t.totalStops, 0);
 
   if (loading) {
     return (
@@ -778,7 +605,7 @@ function Dashboard() {
             <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
               <button 
                 className="critical-dispatch-btn"
-                onClick={startCollection}
+                onClick={handleDispatch}
                 disabled={routes.length === 0 || routeLoading}
               >
                 <Truck size={18} />
@@ -911,87 +738,126 @@ function Dashboard() {
       )}
 
       {/* Stats Metric Cards */}
-      <div className="stats-grid">
-        <div className="stat-card stat-total">
-          <div className="stat-top">
-            <span className="stat-tag">Fleet Size</span>
-            <div className="stat-icon-wrapper"><Trash2 size={18} /></div>
-          </div>
-          <div className="stat-body">
-            <div className="stat-value">{totalBins}</div>
-            <div className="stat-label">Monitored Bins</div>
-          </div>
-          <div className="stat-footer">
-            <span className="stat-trend positive">● Across 5 AMC City Zones</span>
-          </div>
-        </div>
-
-        <div className="stat-card stat-critical">
-          <div className="stat-top">
-            <span className="stat-tag tag-urgent">Urgent Attention</span>
-            <div className="stat-icon-wrapper icon-critical"><AlertTriangle size={18} /></div>
-          </div>
-          <div className="stat-body">
-            <div className="stat-value text-critical">{criticalBins}</div>
-            <div className="stat-label">Critical Overflow (&gt;80%)</div>
-          </div>
-          <div className="stat-footer">
-            <span className="stat-trend negative">● {criticalBinsPercent}% of Fleet Bins</span>
+      <div className="hud-kpi-matrix-5" style={{ marginBottom: '24px' }}>
+        {/* KPI 1: Monitored Fleet Size */}
+        <div className="hud-kpi-card kpi-dark">
+          <div className="kpi-card-glow-bg"></div>
+          <div className="kpi-card-inner">
+            <div className="kpi-top">
+              <span className="kpi-tag">Fleet Monitored</span>
+              <div className="kpi-icon-pill icon-dark">
+                <Trash2 size={16} />
+              </div>
+            </div>
+            <div className="kpi-metric-wrap">
+              <span className="kpi-number">{totalBins}</span>
+              <span className="kpi-unit">Bins</span>
+            </div>
+            <div className="kpi-bottom-detail">
+              <div className="kpi-progress-track">
+                <div className="kpi-progress-fill" style={{ width: '100%', background: 'linear-gradient(90deg, #60a5fa, #3b82f6)' }}></div>
+              </div>
+              <span className="kpi-subtext">Active telemetry across <strong>5 AMC Zones</strong></span>
+            </div>
           </div>
         </div>
 
-        <div className="stat-card stat-fill">
-          <div className="stat-top">
-            <span className="stat-tag">Fleet Capacity</span>
-            <div className="stat-icon-wrapper icon-fill"><Gauge size={18} /></div>
-          </div>
-          <div className="stat-body">
-            <div className="stat-value">{avgFill}%</div>
-            <div className="stat-label">Average Fill Rate</div>
-          </div>
-          <div className="stat-progress-bar">
-            <div className="stat-progress-fill" style={{ 
-              width: `${avgFill}%`, 
-              backgroundColor: avgFill > 70 ? '#f43f5e' : avgFill > 45 ? '#f59e0b' : '#10b981',
-              transition: 'width 0.6s ease, background-color 0.6s ease'
-            }}></div>
-          </div>
-          <div className="stat-footer" style={{ marginTop: '8px' }}>
-            <span className="stat-trend" style={{ fontSize: '0.72rem', color: 'var(--ink-muted)' }}>
-              {filledBinsPercent}% of bins ≥50% fill
-            </span>
-          </div>
-        </div>
-
-        <div className="stat-card stat-alerts stat-clickable" onClick={() => navigate('/notifications')} title="View all incident notifications">
-          <div className="stat-top">
-            <span className="stat-tag">Sensor Anomalies</span>
-            <div className="stat-icon-wrapper icon-alerts"><Bell size={18} /></div>
-          </div>
-          <div className="stat-body">
-            <div className="stat-value">{activeAlerts}</div>
-            <div className="stat-label">Active Alerts &amp; Notifications</div>
-          </div>
-          <div className="stat-footer">
-            <span className="stat-trend positive" style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-              View in Notification Center <ChevronRight size={12} />
-            </span>
+        {/* KPI 2: Critical Overflow */}
+        <div className="hud-kpi-card">
+          <div className="kpi-card-glow-bg glow-coral"></div>
+          <div className="kpi-card-inner">
+            <div className="kpi-top">
+              <span className="kpi-tag" style={{ color: '#e11d48' }}>Urgent Attention</span>
+              <div className="kpi-icon-pill icon-coral">
+                <AlertTriangle size={16} />
+              </div>
+            </div>
+            <div className="kpi-metric-wrap">
+              <span className="kpi-number text-coral-gradient">{criticalBins}</span>
+              <span className="kpi-unit-pill pill-coral">{criticalBinsPercent}% of Fleet</span>
+            </div>
+            <div className="kpi-bottom-detail">
+              <div className="kpi-progress-track">
+                <div className="kpi-progress-fill bg-coral" style={{ width: `${Math.min(criticalBinsPercent * 2.5, 100)}%` }}></div>
+              </div>
+              <span className="kpi-subtext">Bins exceeding <strong>80% threshold</strong></span>
+            </div>
           </div>
         </div>
 
-        <div className="stat-card stat-routes stat-clickable" onClick={() => navigate('/fleet')} title="Open Dedicated Fleet Tracker">
-          <div className="stat-top">
-            <span className="stat-tag tag-dispatch">Fleet Control</span>
-            <div className="stat-icon-wrapper icon-routes"><Truck size={18} /></div>
+        {/* KPI 3: Average Fill Capacity */}
+        <div className="hud-kpi-card">
+          <div className="kpi-card-glow-bg glow-amber"></div>
+          <div className="kpi-card-inner">
+            <div className="kpi-top">
+              <span className="kpi-tag">Fleet Capacity</span>
+              <div className="kpi-icon-pill icon-amber">
+                <Gauge size={16} />
+              </div>
+            </div>
+            <div className="kpi-metric-wrap">
+              <span className="kpi-number text-amber-gradient">{avgFill}%</span>
+              <span className="kpi-unit-pill pill-amber">Average</span>
+            </div>
+            <div className="kpi-bottom-detail">
+              <div className="kpi-progress-track">
+                <div className="kpi-progress-fill" style={{ 
+                  width: `${avgFill}%`, 
+                  background: avgFill > 70 ? '#f43f5e' : avgFill > 45 ? '#f59e0b' : '#10b981' 
+                }}></div>
+              </div>
+              <span className="kpi-subtext"><strong>{filledBinsPercent}%</strong> of bins &ge; 50% capacity</span>
+            </div>
           </div>
-          <div className="stat-body">
-            <div className="stat-value">{Math.min(routes.length, 4) || 4}</div>
-            <div className="stat-label">Trucks Ready / Dispatched</div>
+        </div>
+
+        {/* KPI 4: Sensor Anomalies / Alerts */}
+        <div className="hud-kpi-card" style={{ cursor: 'pointer' }} onClick={() => navigate('/notifications')} title="View all incident notifications">
+          <div className="kpi-card-glow-bg glow-violet"></div>
+          <div className="kpi-card-inner">
+            <div className="kpi-top">
+              <span className="kpi-tag">Sensor Anomalies</span>
+              <div className="kpi-icon-pill icon-violet">
+                <Bell size={16} />
+              </div>
+            </div>
+            <div className="kpi-metric-wrap">
+              <span className="kpi-number text-violet-gradient">{activeAlerts}</span>
+              <span className="kpi-unit-pill pill-violet">Active</span>
+            </div>
+            <div className="kpi-bottom-detail">
+              <div className="kpi-progress-track">
+                <div className="kpi-progress-fill bg-violet" style={{ width: `${Math.min(activeAlerts * 20, 100)}%` }}></div>
+              </div>
+              <span className="kpi-subtext" style={{ display: 'flex', alignItems: 'center', gap: '3px', color: '#7c3aed', fontWeight: 600 }}>
+                Notification Center <ChevronRight size={12} />
+              </span>
+            </div>
           </div>
-          <div className="stat-footer">
-            <span className="stat-trend positive" style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-              Open Dedicated Fleet Tracker <ChevronRight size={12} />
-            </span>
+        </div>
+
+        {/* KPI 5: Fleet Control */}
+        <div className="hud-kpi-card" style={{ cursor: 'pointer' }} onClick={() => navigate('/fleet')} title="Open Dedicated Fleet Tracker">
+          <div className="kpi-card-glow-bg glow-cyan"></div>
+          <div className="kpi-card-inner">
+            <div className="kpi-top">
+              <span className="kpi-tag">Fleet Control</span>
+              <div className="kpi-icon-pill icon-cyan">
+                <Truck size={16} />
+              </div>
+            </div>
+            <div className="kpi-metric-wrap">
+              <span className="kpi-number text-cyan-gradient">{Math.min(routes.length, 4) || 4}</span>
+              <span className="kpi-unit-pill pill-cyan">{collectionActive ? `${activeTrucks} Active` : collectionComplete ? 'Complete' : 'Ready'}</span>
+            </div>
+            <div className="kpi-bottom-detail">
+              <div className="kpi-progress-track">
+                <div className="kpi-progress-fill bg-cyan" style={{ width: `${collectionActive ? Math.min((totalStopsDone / (totalPlannedStops || 40)) * 100, 100) : collectionComplete ? 100 : 25}%` }}></div>
+              </div>
+              <span className="kpi-subtext" style={{ display: 'flex', alignItems: 'center', gap: '3px', color: '#0891b2', fontWeight: 600 }}>
+                {collectionActive ? `${totalStopsDone}/${totalPlannedStops || 40} stops` : 'Fleet Tracker'} <ChevronRight size={12} />
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -1081,11 +947,35 @@ function Dashboard() {
                 <Truck size={15} />
                 <span>Open Fleet Tracker</span>
               </button>
-              <button className="btn btn-primary" onClick={generateRoutes} disabled={routeLoading || collectionActive}>
+              {!collectionActive && routes.length > 0 && (
+                <button 
+                  className="btn btn-primary" 
+                  onClick={handleDispatch}
+                  disabled={routeLoading}
+                  title="Dispatch collection fleet"
+                >
+                  <Truck size={15} />
+                  <span>Dispatch Fleet ({Math.min(routes.length, 4)} Trucks)</span>
+                </button>
+              )}
+              {collectionActive && (
+                <button 
+                  className="btn btn-secondary" 
+                  onClick={() => {
+                    resetFleet();
+                    showSimToast('Fleet simulation reset to depot standby.');
+                  }}
+                  title="Reset collection fleet"
+                >
+                  <RotateCcw size={15} />
+                  <span>Reset Fleet</span>
+                </button>
+              )}
+              <button className="btn btn-secondary" onClick={generateRoutes} disabled={routeLoading || collectionActive}>
                 {routeLoading ? (
                   <><RefreshCw size={15} className="spin" /><span>Computing CVRP...</span></>
                 ) : (
-                  <><Truck size={15} /><span>Generate Optimal Routes</span></>
+                  <><RefreshCw size={15} /><span>Recompute Routes</span></>
                 )}
               </button>
             </div>

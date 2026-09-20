@@ -617,61 +617,89 @@ export default function RecyclingPage() {
         </div>
       </div>
 
-      {/* ── Top KPI Cards Grid ────────────────────────────────────────────── */}
-      <div className="forecast-kpis-grid">
-        <div className="stat-card stat-total">
-          <div className="stat-top">
-            <span className="stat-tag">Monitored Bins</span>
-            <div className="stat-icon-wrapper"><Layers size={18} /></div>
-          </div>
-          <div className="stat-body">
-            <div className="stat-value">{summary.total_bins || 40}</div>
-            <div className="stat-label">Bins Across 5 Zones</div>
-          </div>
-          <div className="stat-footer">
-            <span className="stat-trend positive">Ahmedabad Municipal Grid</span>
-          </div>
-        </div>
-
-        <div className="stat-card stat-critical">
-          <div className="stat-top">
-            <span className="stat-tag tag-urgent">Critical Bins</span>
-            <div className="stat-icon-wrapper icon-critical"><AlertTriangle size={18} /></div>
-          </div>
-          <div className="stat-body">
-            <div className="stat-value text-critical">{summary.critical_bins ?? '--'}</div>
-            <div className="stat-label">Require Urgent Servicing</div>
-          </div>
-          <div className="stat-footer">
-            <span className="stat-trend negative">Threshold Breach &gt;80%</span>
+      {/* ── Top HUD KPI Matrix ────────────────────────────────────────────── */}
+      <div className="hud-kpi-matrix" style={{ marginBottom: '24px' }}>
+        {/* KPI 1: Monitored Bins */}
+        <div className="hud-kpi-card kpi-dark">
+          <div className="kpi-card-glow-bg"></div>
+          <div className="kpi-card-inner">
+            <div className="kpi-top">
+              <span className="kpi-tag">Monitored Bins</span>
+              <div className="kpi-icon-pill icon-dark"><Layers size={16} /></div>
+            </div>
+            <div className="kpi-metric-wrap">
+              <span className="kpi-number">{summary.total_bins || 40}</span>
+              <span className="kpi-unit">Bins</span>
+            </div>
+            <div className="kpi-bottom-detail">
+              <div className="kpi-progress-track">
+                <div className="kpi-progress-fill" style={{ width: '100%', background: 'linear-gradient(90deg, #38bdf8, #3b82f6)' }}></div>
+              </div>
+              <span className="kpi-subtext">Ahmedabad Municipal Grid across <strong>5 Zones</strong></span>
+            </div>
           </div>
         </div>
 
-        <div className="stat-card stat-fill">
-          <div className="stat-top">
-            <span className="stat-tag">Recyclable Coverage</span>
-            <div className="stat-icon-wrapper icon-fill"><Recycle size={18} /></div>
-          </div>
-          <div className="stat-body">
-            <div className="stat-value" style={{ color: '#10b981' }}>{summary.recyclability_ratio ?? 45}%</div>
-            <div className="stat-label">Diversion Stream Share</div>
-          </div>
-          <div className="stat-footer">
-            <span className="stat-trend positive">Plastic, Paper, Metal &amp; Glass</span>
+        {/* KPI 2: Critical Bins */}
+        <div className="hud-kpi-card">
+          <div className="kpi-card-glow-bg glow-coral"></div>
+          <div className="kpi-card-inner">
+            <div className="kpi-top">
+              <span className="kpi-tag" style={{ color: '#e11d48' }}>Critical Bins</span>
+              <div className="kpi-icon-pill icon-coral"><AlertTriangle size={16} /></div>
+            </div>
+            <div className="kpi-metric-wrap">
+              <span className="kpi-number text-coral-gradient">{summary.critical_bins ?? 0}</span>
+              <span className="kpi-unit-pill pill-coral">Urgent</span>
+            </div>
+            <div className="kpi-bottom-detail">
+              <div className="kpi-progress-track">
+                <div className="kpi-progress-fill bg-coral" style={{ width: `${Math.min((summary.critical_bins || 0) * 8, 100)}%` }}></div>
+              </div>
+              <span className="kpi-subtext">Threshold breach <strong>&gt;80% fill</strong></span>
+            </div>
           </div>
         </div>
 
-        <div className="stat-card stat-routes">
-          <div className="stat-top">
-            <span className="stat-tag tag-dispatch">Active Directives</span>
-            <div className="stat-icon-wrapper icon-routes"><Sparkles size={18} /></div>
+        {/* KPI 3: Recyclable Coverage */}
+        <div className="hud-kpi-card">
+          <div className="kpi-card-glow-bg glow-emerald"></div>
+          <div className="kpi-card-inner">
+            <div className="kpi-top">
+              <span className="kpi-tag">Recyclable Share</span>
+              <div className="kpi-icon-pill icon-emerald"><Recycle size={16} /></div>
+            </div>
+            <div className="kpi-metric-wrap">
+              <span className="kpi-number text-emerald-gradient">{summary.recyclability_ratio ?? 45}%</span>
+              <span className="kpi-unit-pill pill-emerald">Diversion</span>
+            </div>
+            <div className="kpi-bottom-detail">
+              <div className="kpi-progress-track">
+                <div className="kpi-progress-fill bg-emerald" style={{ width: `${summary.recyclability_ratio ?? 45}%` }}></div>
+              </div>
+              <span className="kpi-subtext">Plastic, paper, metal &amp; glass streams</span>
+            </div>
           </div>
-          <div className="stat-body">
-            <div className="stat-value">{suggestions.length}</div>
-            <div className="stat-label">Click Directive to Inspect</div>
-          </div>
-          <div className="stat-footer">
-            <span className="stat-trend positive">{highCount > 0 ? `${highCount} Urgent Directives` : 'All Streams Optimized'}</span>
+        </div>
+
+        {/* KPI 4: Active Directives */}
+        <div className="hud-kpi-card">
+          <div className="kpi-card-glow-bg glow-violet"></div>
+          <div className="kpi-card-inner">
+            <div className="kpi-top">
+              <span className="kpi-tag">Active Directives</span>
+              <div className="kpi-icon-pill icon-violet"><Sparkles size={16} /></div>
+            </div>
+            <div className="kpi-metric-wrap">
+              <span className="kpi-number text-violet-gradient">{suggestions.length}</span>
+              <span className="kpi-unit-pill pill-violet">{highCount > 0 ? `${highCount} Urgent` : 'Optimized'}</span>
+            </div>
+            <div className="kpi-bottom-detail">
+              <div className="kpi-progress-track">
+                <div className="kpi-progress-fill bg-violet" style={{ width: '100%' }}></div>
+              </div>
+              <span className="kpi-subtext">Click any directive to inspect circular protocols</span>
+            </div>
           </div>
         </div>
       </div>
@@ -860,7 +888,7 @@ export default function RecyclingPage() {
                 <strong>AMC Facility:</strong> Navrangpura Dry-Waste Consolidation Hub &amp; Gujarat Paper Mills
               </div>
               <div className="mrf-spec-item">
-                <strong>Target Streams:</strong> Shipping cartons, newspapers, institutional paper (Gujarat Univ, LDCE), and commercial cardboards.
+                <strong>Target Streams:</strong> Shipping cartons, newspapers, institutional paper (Gujarat University &amp; Colleges), and commercial cardboards.
               </div>
               <div className="mrf-spec-item">
                 <strong>Protocol:</strong> Mechanical shredding, hydrapulping, centrifugal contaminant screening, and high-density 500kg hydraulic baling. Direct supply chain connection to regional paper recycling mills.

@@ -323,7 +323,7 @@ def generate_fill_readings(db: Session, bins: list[Bin], days: int = 60):
         fill = random.uniform(0, 10)  # Start fill
         name_lower = bin_obj.name.lower()
 
-        # Authentic Ahmedabad waste hierarchy: Wholesale markets & transit lead, LDCE at rank 7-8
+        # Authentic Ahmedabad waste hierarchy: Wholesale markets & transit lead
         if "manek chowk" in name_lower:
             daily_rate = random.uniform(50.0, 56.0)  # #1 Ahmedabad Waste Hotspot (Street Food & Night Bazaar)
             collection_interval_hours = 30

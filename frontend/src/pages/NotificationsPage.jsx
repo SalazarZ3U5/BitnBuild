@@ -169,65 +169,92 @@ export default function NotificationsPage() {
         </div>
       )}
 
-      {/* KPI Notification Stats */}
-      <div className="stats-grid">
-        <div className="stat-card stat-critical">
-          <div className="stat-top">
-            <span className="stat-tag tag-urgent">Urgent Overflows</span>
-            <div className="stat-icon-wrapper icon-critical"><AlertTriangle size={18} /></div>
-          </div>
-          <div className="stat-body">
-            <div className="stat-value text-critical">{criticalCount}</div>
-            <div className="stat-label">Critical Alerts (&gt;80%)</div>
-          </div>
-          <div className="stat-footer">
-            <span className="stat-trend negative">Requires Immediate Fleet Dispatch</span>
-          </div>
-        </div>
-
-        <div className="stat-card stat-alerts">
-          <div className="stat-top">
-            <span className="stat-tag">Sensor Anomalies</span>
-            <div className="stat-icon-wrapper icon-alerts"><Zap size={18} /></div>
-          </div>
-          <div className="stat-body">
-            <div className="stat-value">{anomalyCount}</div>
-            <div className="stat-label">Telemetry Deviations</div>
-          </div>
-          <div className="stat-footer">
-            <span className="stat-trend">Isolation Forest &amp; Spike Traps</span>
+      {/* HUD KPI Notification Matrix */}
+      <div className="hud-kpi-matrix" style={{ marginBottom: '24px' }}>
+        {/* KPI 1: Urgent Overflows */}
+        <div className="hud-kpi-card">
+          <div className="kpi-card-glow-bg glow-coral"></div>
+          <div className="kpi-card-inner">
+            <div className="kpi-top">
+              <span className="kpi-tag" style={{ color: '#e11d48' }}>Urgent Overflows</span>
+              <div className="kpi-icon-pill icon-coral"><AlertTriangle size={16} /></div>
+            </div>
+            <div className="kpi-metric-wrap">
+              <span className="kpi-number text-coral-gradient">{criticalCount}</span>
+              <span className="kpi-unit-pill pill-coral">Critical</span>
+            </div>
+            <div className="kpi-bottom-detail">
+              <div className="kpi-progress-track">
+                <div className="kpi-progress-fill bg-coral" style={{ width: `${Math.min(criticalCount * 20, 100)}%` }}></div>
+              </div>
+              <span className="kpi-subtext">Requires immediate <strong>fleet dispatch</strong></span>
+            </div>
           </div>
         </div>
 
-        <div className="stat-card stat-fill">
-          <div className="stat-top">
-            <span className="stat-tag">Moderate Warnings</span>
-            <div className="stat-icon-wrapper icon-fill"><Clock size={18} /></div>
-          </div>
-          <div className="stat-body">
-            <div className="stat-value">{warningCount}</div>
-            <div className="stat-label">Approaching Capacity</div>
-          </div>
-          <div className="stat-footer">
-            <span className="stat-trend">Scheduled in Next Route Wave</span>
+        {/* KPI 2: Sensor Anomalies */}
+        <div className="hud-kpi-card">
+          <div className="kpi-card-glow-bg glow-violet"></div>
+          <div className="kpi-card-inner">
+            <div className="kpi-top">
+              <span className="kpi-tag">Sensor Anomalies</span>
+              <div className="kpi-icon-pill icon-violet"><Zap size={16} /></div>
+            </div>
+            <div className="kpi-metric-wrap">
+              <span className="kpi-number text-violet-gradient">{anomalyCount}</span>
+              <span className="kpi-unit-pill pill-violet">Deviations</span>
+            </div>
+            <div className="kpi-bottom-detail">
+              <div className="kpi-progress-track">
+                <div className="kpi-progress-fill bg-violet" style={{ width: `${Math.min(anomalyCount * 25, 100)}%` }}></div>
+              </div>
+              <span className="kpi-subtext">Isolation Forest &amp; <strong>spike traps</strong></span>
+            </div>
           </div>
         </div>
 
-        <div className="stat-card stat-total">
-          <div className="stat-top">
-            <span className="stat-tag">Active Queue</span>
-            <div className="stat-icon-wrapper"><Bell size={18} /></div>
+        {/* KPI 3: Moderate Warnings */}
+        <div className="hud-kpi-card">
+          <div className="kpi-card-glow-bg glow-amber"></div>
+          <div className="kpi-card-inner">
+            <div className="kpi-top">
+              <span className="kpi-tag">Approaching Capacity</span>
+              <div className="kpi-icon-pill icon-amber"><Clock size={16} /></div>
+            </div>
+            <div className="kpi-metric-wrap">
+              <span className="kpi-number text-amber-gradient">{warningCount}</span>
+              <span className="kpi-unit-pill pill-amber">Warning</span>
+            </div>
+            <div className="kpi-bottom-detail">
+              <div className="kpi-progress-track">
+                <div className="kpi-progress-fill bg-amber" style={{ width: `${Math.min(warningCount * 20, 100)}%` }}></div>
+              </div>
+              <span className="kpi-subtext">Scheduled in <strong>next route wave</strong></span>
+            </div>
           </div>
-          <div className="stat-body">
-            <div className="stat-value">{totalActive}</div>
-            <div className="stat-label">Total Unresolved Incidents</div>
-          </div>
-          <div className="stat-footer">
-            <span className="stat-trend positive">● Live Stream Synchronized</span>
+        </div>
+
+        {/* KPI 4: Active Queue */}
+        <div className="hud-kpi-card kpi-dark">
+          <div className="kpi-card-glow-bg"></div>
+          <div className="kpi-card-inner">
+            <div className="kpi-top">
+              <span className="kpi-tag">Active Queue</span>
+              <div className="kpi-icon-pill icon-dark"><Bell size={16} /></div>
+            </div>
+            <div className="kpi-metric-wrap">
+              <span className="kpi-number">{totalActive}</span>
+              <span className="kpi-unit">Incidents</span>
+            </div>
+            <div className="kpi-bottom-detail">
+              <div className="kpi-progress-track">
+                <div className="kpi-progress-fill" style={{ width: '100%', background: 'linear-gradient(90deg, #38bdf8, #3b82f6)' }}></div>
+              </div>
+              <span className="kpi-subtext">● Live stream synchronized across <strong>40 nodes</strong></span>
+            </div>
           </div>
         </div>
       </div>
-
 
       {/* Main Notification Center Card */}
       <div className="card notifications-feed-card">
@@ -237,28 +264,28 @@ export default function NotificationsPage() {
             <h3>Municipal Alert Stream</h3>
           </div>
 
-          {/* Filter Pills */}
-          <div className="notification-filter-tabs">
+          {/* Filter Tabs */}
+          <div className="hud-tab-switcher">
             <button 
-              className={`filter-tab ${filter === 'all' ? 'active' : ''}`}
+              className={`hud-tab-btn ${filter === 'all' ? 'active' : ''}`}
               onClick={() => setFilter('all')}
             >
               All Active ({totalActive})
             </button>
             <button 
-              className={`filter-tab ${filter === 'critical' ? 'active' : ''}`}
+              className={`hud-tab-btn ${filter === 'critical' ? 'active' : ''}`}
               onClick={() => setFilter('critical')}
             >
               Critical ({criticalCount})
             </button>
             <button 
-              className={`filter-tab ${filter === 'anomaly' ? 'active' : ''}`}
+              className={`hud-tab-btn ${filter === 'anomaly' ? 'active' : ''}`}
               onClick={() => setFilter('anomaly')}
             >
               Anomalies ({anomalyCount})
             </button>
             <button 
-              className={`filter-tab ${filter === 'resolved' ? 'active' : ''}`}
+              className={`hud-tab-btn ${filter === 'resolved' ? 'active' : ''}`}
               onClick={() => setFilter('resolved')}
             >
               Resolved ({resolvedCount})

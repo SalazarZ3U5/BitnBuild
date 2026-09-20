@@ -57,9 +57,9 @@
   </tr>
   <tr>
     <td width="50%">
-      <h3>◆ Municipal Peak Hotspot: LD College</h3>
+      <h3>◆ Municipal Peak Hotspot Engine</h3>
       <p>
-        Configures <b>LD College of Engineering</b> as Ahmedabad's <b>#1 waste producer</b> with a dedicated <b>2,400L Mega Dumpster</b>, peak daily generation velocity (~48.5%/day), permanent top ranking on hotspot leaderboards, and real-time high-priority compactor dispatch alerts.
+        Configures dedicated <b>Mega Dumpster telemetry (2,400L)</b> for Ahmedabad's <b>#1 waste producer</b>, tracking peak daily generation velocity (~48.5%/day), dynamic top ranking on hotspot leaderboards, and real-time high-priority compactor dispatch alerts.
       </p>
     </td>
     <td width="50%">
@@ -147,7 +147,7 @@ The system is calibrated with **40 authentic landmark bin locations** across 5 a
 
 ```
 ▶ West Zone (Navrangpura)
-   ├── LD College of Engineering (Central Big Bin · 2,400L · Citywide #1 Waste Producer 👑)
+   ├── University Hub Commercial Dumpster (Central Big Bin · 2,400L · Citywide #1 Waste Producer 👑)
    ├── Law Garden Market · C.G. Road Panchvati · C.G. Road Swastik Cross
    └── Gujarat University Library · Mithakhali Six Roads · Ambawadi Circle · Sardar Patel Stadium
 
@@ -176,9 +176,9 @@ The system is calibrated with **40 authentic landmark bin locations** across 5 a
 
 ### 1. Central Operational Dashboard
 * **Prominent Simulation Card**: Positioned directly beneath the page header for immediate real-time control over the IoT sensor streaming playback engine, manual +1h tick advancement, nominal baseline resets, and municipal emergency stress testing.
-* **Special Mega-Producer Alert**: Displays an active alert for LD College of Engineering with 1-click compactor tracking.
+* **Special Mega-Producer Alert**: Displays an active alert for the municipal #1 waste producer with 1-click compactor tracking.
 * **Live Fleet Status**: Above-map live cards detailing active trucks, completed stops, total liters gathered, and A* distance metrics.
-* **Interactive GIS Map**: Leaflet map featuring road-snapped river-aware polyline routes, pulsating hotspot fire-rings, and special styling for LDCE's 2,400L bin.
+* **Interactive GIS Map**: Leaflet map featuring road-snapped river-aware polyline routes, pulsating hotspot fire-rings, and special styling for the 2,400L Mega Dumpster.
 
 ### 2. Dedicated Fleet Tracking & Telemetry
 * Full-width map interface with dedicated vehicle grid cards located cleanly below the map.
@@ -186,7 +186,7 @@ The system is calibrated with **40 authentic landmark bin locations** across 5 a
 
 ### 3. Macro Intelligence & Analytics
 * **Volume Metrics**: Gross collected output, recyclability diversion percentage, and residual landfill volume.
-* **Hotspot Leaderboard Table**: Horizontal-scroll protected table ranking bins by daily fill velocity with LD College of Engineering pinned at `#1`.
+* **Hotspot Leaderboard Table**: Horizontal-scroll protected table ranking bins by daily fill velocity with the municipal #1 producer highlighted.
 * **Autonomous Directives**: Cluster fill velocity breakdown with automated municipal dispatch recommendations.
 * **AI Recycling Suggestions**: Material segregation advice based on real-time collection telemetry.
 
@@ -211,16 +211,16 @@ The system is calibrated with **40 authentic landmark bin locations** across 5 a
 | `GET` | `/priorities` | Multi-factor weighted urgency ranking of bins |
 | `GET` | `/routes/today` | River-aware CVRP routes with OSRM street geometries |
 | `GET` | `/routes/predictive` | Proactive dispatch routes for anticipated overflow |
-| `GET` | `/analytics/hotspots` | Spatial hotspot ranking (guaranteed LDCE #1 producer) |
+| `GET` | `/analytics/hotspots` | Spatial hotspot ranking (citywide #1 waste producer prioritization) |
 | `GET` | `/analytics/waste-totals` | Cumulative volumetric waste totals by category |
 | `GET` | `/analytics/patterns` | Spatial K-Means clusters and fill velocity patterns |
 | `GET` | `/recycling/suggestions` | AI-driven recycling optimization recommendations |
 | `GET` | `/alerts` | Active municipal alerts (overflow, tilt, thermal, special producer) |
 | `POST` | `/simulation/step` | Advance IoT sensor telemetry simulation by one step |
 | `POST` | `/simulation/toggle` | Toggle continuous live stream simulation (+1h every 2s) |
-| `POST` | `/simulation/fill-all-critical` | Surge all bins to critical (>80%) and LDCE to 100% |
+| `POST` | `/simulation/fill-all-critical` | Surge all bins to critical (>80%) and peak hotspot to 100% |
 | `POST` | `/simulation/inject-anomaly` | Inject live hardware anomalies (tilt tip-over, thermal fire, surge) |
-| `POST` | `/simulation/reset` | Restore all bins to nominal state while preserving LDCE priority |
+| `POST` | `/simulation/reset` | Restore all bins to nominal state while preserving peak hotspot priority |
 | `WS` | `/ws` | Real-time live bi-directional telemetry broadcast socket |
 
 </details>
