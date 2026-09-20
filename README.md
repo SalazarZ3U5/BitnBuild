@@ -1,7 +1,7 @@
 <div align="center">
 
 # ◈ AMC WasteOptimizer AI
-### Next-Gen Municipal Waste Intelligence & River-Aware Fleet Dispatch Platform
+### Next-Gen Municipal Waste Intelligence & Intelligent Fleet Dispatch Platform
 <p align="center">
   <b>Developed with precision by Team ResTart for BitNBuild 2026</b>
 </p>
@@ -15,7 +15,7 @@
 
 <p align="center">
   <b>Smart Municipal Waste Management System tailored for Ahmedabad Municipal Corporation (AMC)</b><br/>
-  Featuring ML overflow prediction, on-device CNN waste classification, river-aware Capacitated Vehicle Routing (CVRP), A* road-snapped pathfinding, macro spatial analytics, and live WebSocket telemetry replay.
+  Featuring ML overflow prediction, on-device CNN waste classification, Capacitated Vehicle Routing (CVRP), A* road-snapped pathfinding, macro spatial analytics, and live WebSocket telemetry replay.
 </p>
 
 ---
@@ -29,9 +29,9 @@
 <table>
   <tr>
     <td width="50%">
-      <h3>◆ River-Aware Bridge Routing</h3>
+      <h3>◆ Turn-by-Turn Bridge Routing</h3>
       <p>
-        Models the physical barrier of the <b>Sabarmati River</b> in Ahmedabad. Prevents naive "crow-flies" routes across water bodies by channeling cross-river traffic strictly across official bridges (<i>Subhash, Gandhi, Nehru, Ellis, Sardar, and Ambedkar bridges</i>) with real turn-by-turn road geometry from <b>OSRM</b>.
+        Channels municipal collection traffic strictly across official Ahmedabad bridges (<i>Subhash, Gandhi, Nehru, Ellis, Sardar, and Ambedkar bridges</i>) with real turn-by-turn road geometry from <b>OSRM</b>, preventing naive direct paths.
       </p>
     </td>
     <td width="50%">
@@ -91,7 +91,7 @@ flowchart TD
         API[RESTful API & WebSockets Router]
         Classifier[LargeNet CNN Inference Engine]
         Predictor[Prophet / Regressor Time-Series]
-        Optimizer[River-Aware CVRP & OSRM Engine]
+        Optimizer[Multi-Vehicle CVRP & OSRM Engine]
         Telemetry[Synthetic IoT Telemetry Replayer]
         Anomaly[IsolationForest Anomaly Detector]
     end
@@ -113,6 +113,31 @@ flowchart TD
     Telemetry --> DB
     Anomaly --> DB
 ```
+
+<br/>
+
+---
+
+## ◈ Platform Showcase & Visual Walkthrough
+
+<div align="center">
+
+| Operational GIS Map (Area Color Sectors) | Glassmorphic Telemetry & Alert Banner |
+| :---: | :---: |
+| <img src="./docs/screenshots/area_color_sectors.png" alt="Operational GIS Map with Area Color Sectors" width="100%"/> | <img src="./docs/screenshots/dashboard_overview.png" alt="Central Operations & Glassmorphic Alert Banner" width="100%"/> |
+| *Color-coded administrative sectors, clean non-cluttered bin pins, bridge route optimization* | *Real-time IoT streaming banner, active vehicle KPIs, manual +1h ticks & stress tests* |
+
+| Municipal Fleet Telematics Tracker | Macro Intelligence & Hotspot Leaderboard |
+| :---: | :---: |
+| <img src="./docs/screenshots/fleet_tracking.png" alt="Municipal Fleet Telematics Tracker" width="100%"/> | <img src="./docs/screenshots/analytics_hotspots.png" alt="Macro Intelligence & Hotspot Leaderboard" width="100%"/> |
+| *Simultaneous 4-depot truck dispatch, live telemetry, and expandable driver dossiers* | *Volumetric waste totals, daily velocity rankings, and automated municipal directives* |
+
+| Predictive AI Overflow Forecasting (Prophet) | On-Device LargeNet CNN Image Classifier |
+| :---: | :---: |
+| <img src="./docs/screenshots/waste_forecasting.png" alt="Predictive AI Fill-Level Forecasting" width="100%"/> | <img src="./docs/screenshots/ai_classifier.png" alt="On-Device LargeNet CNN Image Classifier" width="100%"/> |
+| *Time-series regression forecasting dynamic overflow windows up to T+72h* | *Embedded 1.1 MB PyTorch CNN for real-time edge 6-class waste classification* |
+
+</div>
 
 <br/>
 
@@ -176,54 +201,187 @@ The system is calibrated with **40 authentic landmark bin locations** across 5 a
 
 ### 1. Central Operational Dashboard
 * **Prominent Simulation Card**: Positioned directly beneath the page header for immediate real-time control over the IoT sensor streaming playback engine, manual +1h tick advancement, nominal baseline resets, and municipal emergency stress testing.
-* **Special Mega-Producer Alert**: Displays an active alert for the municipal #1 waste producer with 1-click compactor tracking.
+* **Glassmorphic Hotspot Alert Banner**: Displays an active alert for Ahmedabad's municipal #1 waste producer with 1-click compactor tracking and quick dismiss.
 * **Live Fleet Status**: Above-map live cards detailing active trucks, completed stops, total liters gathered, and A* distance metrics.
-* **Interactive GIS Map**: Leaflet map featuring road-snapped river-aware polyline routes, pulsating hotspot fire-rings, and special styling for the 2,400L Mega Dumpster.
+* **Interactive GIS Map**: Leaflet map featuring administrative area-wise color sectors, road-snapped polyline routes, pulsating hotspot fire-rings, clean color-coded status pins without percentage clutter, and special styling for the 2,400L Mega Dumpster.
 
 ### 2. Dedicated Fleet Tracking & Telemetry
 * Full-width map interface with dedicated vehicle grid cards located cleanly below the map.
+* Simultaneous multi-depot tracking across 4 AMC depots (West, South, North-West, East) with live telemetry and animated progress.
 * Spacious, tabbed **Truck Dossier Modal** with structured sections for Driver credentials, sequenced route stops, and mechanical/AMC maintenance specs.
 
-### 3. Macro Intelligence & Analytics
-* **Volume Metrics**: Gross collected output, recyclability diversion percentage, and residual landfill volume.
-* **Hotspot Leaderboard Table**: Horizontal-scroll protected table ranking bins by daily fill velocity with the municipal #1 producer highlighted.
-* **Autonomous Directives**: Cluster fill velocity breakdown with automated municipal dispatch recommendations.
-* **AI Recycling Suggestions**: Material segregation advice based on real-time collection telemetry.
+### 3. Macro Intelligence & Spatial Analytics
+* **Volume Metrics & Stream Composition**: 30-day cumulative aggregate output (1,49,145 Liters), recycling diversion rate (44.2%), peak evening market surge analysis (18:00–21:00), 24-hour waste generation curves, and donut fraction breakdowns.
+* **Spatial K-Means Cluster Breakdown & Radar**: 5-zone radar footprint comparing generation velocity, K-Means cluster fill velocity schedules, and citywide peak generation alerts.
+* **Hotspot Velocity Leaderboard & Sustainability Metrics**: Dynamic ranking of bins by average daily fill rate, alongside quantified environmental impact savings: 64 mature trees conserved, 81 tons CO₂e mitigated, 2,781.6 kWh clean biomethanation power generated, and 149.1 m³ landfill airspace spared.
+
+<div align="center">
+
+| Volumetric KPIs & 24h Hourly Curve | Spatial K-Means Radar & Hotspot Banner |
+| :---: | :---: |
+| <img src="./docs/screenshots/analytics_volumetrics.png" alt="Analytics Volumetrics & Generation Curve" width="100%"/> | <img src="./docs/screenshots/analytics_clusters_radar.png" alt="Spatial Radar & Cluster Velocity" width="100%"/> |
+| *Municipal volumetrics, 24h diurnal generation curve, material stream donut* | *5-zone radar footprint, spatial cluster velocity, and #1 hotspot banner* |
+
+| Hotspot Leaderboard Table & Environmental Sustainability Impact |
+| :---: |
+| <img src="./docs/screenshots/analytics_sustainability.png" alt="Hotspot Velocity Table & Sustainability Metrics" width="95%"/> |
+| *Dynamic daily fill rate ranking table and quantified circular sustainability metrics (CO₂e, trees, CBG power)* |
+
+</div>
+
+
+### 4. Predictive AI Overflow Forecasting (Prophet)
+* **Time-Series Regression**: Incorporates Meta Prophet and linear autoregression trained on 60 days of hourly sawtooth telemetry.
+* **Dynamic Time Horizons**: Interactive time horizon selector (T+1h to T+72h) anticipating overflow risks before bins hit critical thresholds.
+* **Proactive CVRP Dispatch**: Preemptive collection route dispatching to avert municipal overflow penalties.
+
+### 5. On-Device Edge PyTorch CNN Waste Classifier
+* **Embedded LargeNet Architecture**: Lightweight (1.1 MB) neural network trained to classify waste into 6 primary streams: Plastic, Organic, Paper, Glass, Metal, and Residual.
+* **Zero Cloud Latency**: Instantaneous local edge inference with confidence distribution metrics and automated bin sorting guidance.
 
 <br/>
 
 ---
 
-## ◈ API Reference Matrix
+## ◈ End-to-End Simulation Engine & Real-Time Telemetry Pipeline
 
-<details open>
-<summary><b>[+] Click to expand Core REST & WebSocket Endpoints</b></summary>
+The platform includes a built-in IoT simulation and streaming engine that models the dynamic flow of municipal waste generation across Ahmedabad. It enables operators and evaluators to stress-test collection logistics, observe cascading overflow events, and evaluate real-time re-routing without waiting for real-world hours to elapse.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Admin as Municipal Dispatcher
+    participant UI as Dashboard Control Center
+    participant WS as WebSocket Gateway (/ws)
+    participant Sim as FastAPI Simulation Engine (/simulation)
+    participant DB as PostgreSQL / PostGIS Store
+    participant CVRP as Google OR-Tools CVRP Engine
+
+    Admin->>UI: Toggle "Stream Live Telemetry" or Click "+1h Tick"
+    UI->>Sim: POST /simulation/toggle or POST /simulation/tick
+    activate Sim
+    Sim->>Sim: Step synthetic clock & compute diurnal fill deltas
+    Note over Sim: Special #1 Producer: delta 12-18% / step<br/>Nominal bins: delta 5-11% / step
+    Sim->>DB: INSERT into fill_readings (sawtooth historical log)
+    Sim->>DB: UPDATE bins (current_fill_percent, battery, status)
+    Sim->>DB: Evaluate thresholds -> Generate alerts (critical / warning)
+    Sim-->>WS: Broadcast telemetry refresh trigger
+    deactivate Sim
+    
+    WS-->>UI: Real-time broadcast push (Zero Page Reload)
+    activate UI
+    UI->>UI: Update Top HUD KPIs (Liters, Critical Count)
+    UI->>UI: Recalculate Urgency Priority Queue
+    UI->>UI: Transition Map Marker Colors & Pulsating Fire Rings
+    opt Critical Threshold Breached
+        UI->>UI: Trigger Glassmorphic #1 Producer Alert Banner
+    end
+    UI->>CVRP: Re-optimize collection routes for active trucks
+    CVRP-->>UI: Return updated road-snapped bridge route polylines
+    deactivate UI
+```
+
+### Complete Execution Path: Step-by-Step
+
+#### 1. Simulation Orchestration & UI Control Center
+Positioned front-and-center on the primary [Dashboard](file:///d:/Kavin/programming/Hackathons/BitNBuild/BitnBuild/frontend/src/pages/Dashboard.jsx), the simulation panel provides full real-time command:
+* **Stream Live Telemetry (`Toggle`)**: Launches an automated background loop advancing 1 simulated hour every 2.0 seconds. Ideal for watching trucks collect waste and observing how bins replenish during peak commercial hours.
+* **`+1h Step` Manual Tick**: Steps the municipal grid forward by exactly one hour, computing new fills and recalculating all dependent KPIs instantly.
+* **`Surge All to Critical` (Stress Test Mode)**: Surges all 40 municipal bins across the city to emergency critical capacity (86%–98%) while escalating the municipal #1 waste producer to 100%. The simulation automatically pauses, challenging the CVRP solver to generate emergency multi-vehicle evacuation routes.
+* **`Reset to Nominal`**: Restores the municipal grid to baseline safe levels while preserving the continuous generation velocity of the peak hotspot.
+* **`Inject Real-World Anomalies`**: Simulates sudden hardware or environmental edge cases:
+  * *Night Market Surge*: Rapid volume influx in dense food corridors (e.g. Manek Chowk & Law Garden).
+  * *Structural Vandalism / Tip-Over*: IoT accelerometer triggers a tilt alert (`>45°`) requiring safety inspection.
+  * *Thermal Hazard*: Internal bin temperature sensor flags fire risk (`>55°C`), dispatching hazard notices.
+
+#### 2. FastAPI Asynchronous State Machine (`/simulation`)
+The backend router [backend/app/api/simulation.py](file:///d:/Kavin/programming/Hackathons/BitNBuild/BitnBuild/backend/app/api/simulation.py) executes the orchestration loop:
+* **Background Worker**: Managed via an `asyncio.Task` (`_run_sim_loop`) that sleeps for the configured interval, checks safety boundaries, and executes `perform_simulation_step()`.
+* **Auto-Pause Safety Interlock**: If all 40 bins reach critical overflow ($>80\%$), the background task automatically terminates itself to prevent runaway infinite database locks, notifying operators via UI status indicators.
+
+#### 3. Mathematical Diurnal Modeling & Persistence
+In each simulation step:
+* **Diurnal Velocity Computation**: Each bin's fill increments according to realistic municipal consumption rates (nominal bins increment $+5.0\%$ to $+11.0\%$ per tick).
+* **Citywide #1 Hotspot Rule**: Ahmedabad's top producer (University Hub Commercial Dumpster, 2,400L) experiences accelerated daily fill increments ($+12.0\%$ to $+18.0\%$), reflecting ground-truth commercial food packaging volume.
+* **Database Ledger**:
+  * An immutable row is appended to `fill_readings` (`bin_id`, `timestamp`, `fill_percent`) to maintain sawtooth time-series integrity for Prophet ML retraining.
+  * The bin's live record in `bins` is updated with the new fill level.
+  * System alerts (`Alert`) are generated upon crossing the warning ($>50\%$) or critical ($>80\%$) boundaries.
+
+#### 4. Real-Time WebSocket Broadcasting (`/ws`)
+* Rather than requiring client-side polling, the backend dispatches a broadcast callback `_broadcast_callback()`.
+* Connected frontend clients receive real-time JSON packets over a persistent WebSocket connection, ensuring instant UI synchronization across multiple dispatch consoles without page reloads.
+
+#### 5. Dynamic Client Reactivity & Automated Routing
+Upon receiving a WebSocket broadcast:
+* **HUD Matrix**: Real-time counters update immediately (Citywide Collected Liters, Critical Bins, Active Vehicles).
+* **Priority Engine**: The client re-ranks bins by multi-factor weighted urgency (Fill %, Time to Overflow, Capacity, Waste Stream).
+* **Glassmorphic Hotspot Alert Banner**: If the municipal #1 producer breaches $80\%$, a prominent glassmorphic warning banner animates into view with a 1-click compactor route dispatch action.
+* **CVRP Re-Route**: Active collection vehicles dynamically recompute their sequenced stops to clear the most urgent bins first.
+
 <br/>
 
-| Method | Endpoint | Description |
-| :---: | :--- | :--- |
-| `GET` | `/bins` | Retrieve all bins with real-time fill %, battery, capacity, and location |
-| `POST` | `/bins` | Register a new smart IoT bin |
-| `GET` | `/bins/{id}/readings` | Historical telemetry readings (60-day sawtooth logs) |
-| `POST` | `/classify` | Upload an image for instant on-device LargeNet classification |
-| `GET` | `/predict/{bin_id}` | Prophet ML overflow prediction for an individual bin |
-| `GET` | `/predict/bulk/all` | City-wide predicted fill distribution at `T+hours` |
-| `GET` | `/priorities` | Multi-factor weighted urgency ranking of bins |
-| `GET` | `/routes/today` | River-aware CVRP routes with OSRM street geometries |
-| `GET` | `/routes/predictive` | Proactive dispatch routes for anticipated overflow |
-| `GET` | `/analytics/hotspots` | Spatial hotspot ranking (citywide #1 waste producer prioritization) |
-| `GET` | `/analytics/waste-totals` | Cumulative volumetric waste totals by category |
-| `GET` | `/analytics/patterns` | Spatial K-Means clusters and fill velocity patterns |
-| `GET` | `/recycling/suggestions` | AI-driven recycling optimization recommendations |
-| `GET` | `/alerts` | Active municipal alerts (overflow, tilt, thermal, special producer) |
-| `POST` | `/simulation/step` | Advance IoT sensor telemetry simulation by one step |
-| `POST` | `/simulation/toggle` | Toggle continuous live stream simulation (+1h every 2s) |
-| `POST` | `/simulation/fill-all-critical` | Surge all bins to critical (>80%) and peak hotspot to 100% |
-| `POST` | `/simulation/inject-anomaly` | Inject live hardware anomalies (tilt tip-over, thermal fire, surge) |
-| `POST` | `/simulation/reset` | Restore all bins to nominal state while preserving peak hotspot priority |
-| `WS` | `/ws` | Real-time live bi-directional telemetry broadcast socket |
+---
 
-</details>
+## ◈ GIS Spatial Intelligence: Area Color Sectors & Dynamic Heatmaps
+
+The mapping engine is built with **Leaflet.js** and customized with GPU-accelerated SVG overlays, interactive administrative polygon sectors, and dual-mode spatial intelligence.
+
+### 1. Administrative Area-Wise Color Sectors (`Area Sectors Mode`)
+To eliminate visual clutter and provide immediate geographic situational awareness, Ahmedabad is divided into **5 authentic administrative municipal sectors**:
+
+| Zone / Sector | Identifier & Color | Wards Covered | Strategic Sector Character |
+| :--- | :---: | :--- | :--- |
+| **Central Zone** | <span style="color:#f59e0b">● Amber Gold (`#f59e0b`)</span> | Khadia, Bhadra & Old City Wards | Dense heritage markets, night street food, high organic waste |
+| **West Zone** | <span style="color:#3b82f6">● Royal Cobalt (`#3b82f6`)</span> | Navrangpura, Ambawadi & CG Road | Commercial offices, student hubs, plastic & paper dominance |
+| **North West Zone** | <span style="color:#8b5cf6">● Royal Violet (`#8b5cf6`)</span> | Bodakdev, SG Highway & Science City | IT parks, shopping malls, high packaging & dry waste |
+| **South West Zone** | <span style="color:#06b6d4">● Cyan Teal (`#06b6d4`)</span> | Satellite, Prahlad Nagar & Sarkhej | Corporate corridors, mixed high-rise residential communities |
+| **East Zone** | <span style="color:#10b981">● Emerald Green (`#10b981`)</span> | Bapunagar, Nikol & Naroda Wards | Heavy industrial manufacturing, scrap metal & textile residuals |
+
+#### Clean, Non-Cluttered Map Design
+* **Text-Free Region Boundaries**: Sector polygons are drawn with crisp dashed borders (`dashArray: '6, 6'`) and soft translucent fill (`fillOpacity: 0.22`), providing clear territorial orientation without obscuring street names or bridges.
+* **On-Demand Information Popup**: To avoid screen clutter, region names and metrics only appear when an operator clicks inside a sector polygon. Clicking reveals a glassmorphic card displaying:
+  * Zone title, administrative ward coverage, and strategic sector tag.
+  * Active bin count and total volumetric capacity.
+  * Live average fill percentage and current surge tier.
+* **Clutter-Free Bin Indicators**: Standard percentage numbers (`45%`, `78%`) are removed from the map view. Instead, bins are rendered as minimalist color-coded status badges:
+  * 🔴 **Critical ($>80\%$)**: `#f43f5e` (Rose Red)
+  * 🟡 **Approaching Capacity ($50\%–80\%$)**: `#f59e0b` (Amber Orange)
+  * 🟢 **Nominal / Serviced ($<50\%$)**: `#10b981` (Emerald Green)
+  * Full numerical telemetry, capacity, waste stream, and battery health appear instantly when clicking any individual bin marker.
+
+---
+
+### 2. Dynamic Waste Generation Heatmap Mode (`Waste Heatmap Mode`)
+Operators can switch from territorial sectors to the **Waste Generation Heatmap** via the map HUD toggle:
+* **Dynamic Zone Fill Velocity**: In Heatmap mode, the sector polygons dynamically recalculate their fill color based on the live average fill of all contained bins:
+  * **Low Density (`<36%` avg fill)**: `#10b981` (Emerald Green)
+  * **Moderate Density (`36%–46%` avg fill)**: `#3b82f6` (Cobalt Blue)
+  * **High Density (`46%–58%` avg fill)**: `#f97316` (Vibrant Orange)
+  * **Critical Surge (`>58%` avg fill)**: `#f43f5e` (Rose Red Alert)
+* **Hotspot Pulsating Radar Rings**:
+  * Critical bins and Ahmedabad's municipal #1 producer (University Hub Commercial Dumpster) feature multi-layer animated CSS pulsating fire rings (`🔥`).
+  * The outer and middle rings pulse continuously, drawing the operator's eye immediately to acute waste accumulation points.
+
+---
+
+### 3. Predictive AI Fill-Level Heatmap (AI Forecast Page)
+On the dedicated [AI Forecast Page](file:///d:/Kavin/programming/Hackathons/BitNBuild/BitnBuild/frontend/src/pages/ForecastPage.jsx):
+* **Meta Prophet Integration**: Time-series models trained on 60 days of hourly sensor readings extrapolate forward fill levels.
+* **Interactive Time Horizon Slider**: Operators adjust the forecast window from `T+1h` up to `T+72h`.
+* **Spatial Vulnerability Gradient**: Canvas-based circle markers with graduated radii and color interpolations (Green $\to$ Yellow $\to$ Orange $\to$ Red) expose emergent overflow zones hours before physical accumulation spills onto roadways.
+
+---
+
+### 4. Road-Snapped Multi-Vehicle Route Polylines
+* **Strict Bridge Channeling**: The routing engine channels municipal truck traffic strictly across the 6 designated road bridges:
+  1. *Subhash Bridge* (North corridor)
+  2. *Gandhi Bridge* (Central-north crossing)
+  3. *Nehru Bridge* (Central riverfront corridor)
+  4. *Ellis Bridge* (Historic central crossing)
+  5. *Sardar Bridge* (South-central connection)
+  6. *Dr. Ambedkar Bridge* (South industrial corridor)
+* **Turn-by-Turn OSRM Geometry**: Polyline routes snap strictly to real Ahmedabad street geometry, color-coded per municipal vehicle, showing sequenced collection stops, turn radii, and realistic driving distances.
 
 <br/>
 
@@ -231,7 +389,7 @@ The system is calibrated with **40 authentic landmark bin locations** across 5 a
 
 ## ◈ Automated Testing
 
-Execute unit and integration tests covering priority ranking, river barrier calculations, bridge routing, and geometry generation:
+Execute unit and integration tests covering priority ranking, distance matrices, bridge routing, and geometry generation:
 
 ```bash
 # From workspace root
@@ -250,7 +408,7 @@ backend/tests/test_route_optimizer.py::test_haversine_same_point               P
 backend/tests/test_route_optimizer.py::test_build_distance_matrix              PASSED
 backend/tests/test_route_optimizer.py::test_fallback_round_robin               PASSED
 backend/tests/test_route_optimizer.py::test_optimize_routes_no_bins            PASSED
-backend/tests/test_route_optimizer.py::test_river_aware_distance_penalizes_river_crossing PASSED
+backend/tests/test_route_optimizer.py::test_distance_penalizes_cross_city_gap PASSED
 backend/tests/test_route_optimizer.py::test_route_geometry_includes_coordinates PASSED
 backend/tests/test_route_optimizer.py::test_cluster_bins_separates_river_banks PASSED
 ============================== 12 passed in 3.09s ==============================

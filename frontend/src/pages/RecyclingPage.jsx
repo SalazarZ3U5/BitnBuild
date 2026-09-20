@@ -405,12 +405,12 @@ function DirectiveModal({ directive, bins, onClose }) {
             {/* Left: Interactive Leaflet Map */}
             <div className="directive-map-wrap">
               <MapContainer
-                center={zoneCenter}
+                center={mapCenter}
                 zoom={directive.zone === 'All Zones' ? 12 : 14}
                 style={{ height: '100%', width: '100%', borderRadius: '14px' }}
                 scrollWheelZoom={true}
               >
-                <MapCenterController center={zoneCenter} zoom={directive.zone === 'All Zones' ? 12 : 14} />
+                <MapCenterController center={mapCenter} zoom={directive.zone === 'All Zones' ? 12 : 14} />
                 <TileLayer
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

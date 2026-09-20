@@ -76,8 +76,22 @@ def get_recycling_suggestions(db: Session = Depends(get_db)):
         dominant_type = max(wt_counts, key=wt_counts.get) if wt_counts else "Mixed"
         dominant_pct = round(wt_counts[dominant_type] / bin_count * 100) if bin_count else 0
 
-        # --- High fill → increase frequency ---
-        if avg_fill >= 70:
+        # --- Critical bins in zone -> High Priority immediate compaction/dispatch ---
+        critical_in_zone = [b for b in data["bins"] if (b.current_fill_percent or 0) >= 80]
+        if critical_in_zone:
+            high_bin = max(critical_in_zone, key=lambda b: (b.current_fill_percent or 0))
+            suggestions.append({
+                "id": f"crit-{zone}",
+                "priority": "high",
+                "type": "collection_frequency",
+                "zone": zone,
+                "category": dominant_type,
+                "icon": "🔴",
+                "action": f"Urgent: {len(critical_in_zone)} bin(s) in {zone} exceeded 80% capacity (Peak: {high_bin.name} at {round(high_bin.current_fill_percent or 0)}%). Dispatch dedicated compactor vehicle immediately.",
+                "impact_estimate": f"Prevents street overflow and clears {round(sum(b.capacity_liters or 240 for b in critical_in_zone))}L of accumulated waste",
+                "metric": f"{round(high_bin.current_fill_percent or 0)}% peak fill",
+            })
+        elif avg_fill >= 55:
             suggestions.append({
                 "id": f"freq-{zone}",
                 "priority": "high",
@@ -85,11 +99,11 @@ def get_recycling_suggestions(db: Session = Depends(get_db)):
                 "zone": zone,
                 "category": dominant_type,
                 "icon": "🔴",
-                "action": f"Increase collection frequency in Zone {zone} — avg fill at {avg_fill:.0f}%. Schedule daily pickups.",
+                "action": f"Increase collection frequency in {zone} — avg fill at {avg_fill:.0f}%. Schedule daily pickups.",
                 "impact_estimate": f"Prevents overflow for {bin_count} bins, reduces overflow risk by ~85%",
                 "metric": f"{avg_fill:.0f}% avg fill",
             })
-        elif avg_fill >= 50:
+        elif avg_fill >= 35:
             suggestions.append({
                 "id": f"freq-warn-{zone}",
                 "priority": "medium",
@@ -97,35 +111,36 @@ def get_recycling_suggestions(db: Session = Depends(get_db)):
                 "zone": zone,
                 "category": dominant_type,
                 "icon": "🟡",
-                "action": f"Zone {zone} averaging {avg_fill:.0f}% fill. Increase to every-2-day schedule to stay ahead of overflow.",
+                "action": f"{zone} averaging {avg_fill:.0f}% fill. Optimize route schedules to stay ahead of peak evening surge.",
                 "impact_estimate": f"Reduces critical incidents by ~60% for {bin_count} bins",
                 "metric": f"{avg_fill:.0f}% avg fill",
             })
 
-        # --- Dominant recyclable type → sorting facility suggestion ---
-        if dominant_type in RECYCLABLE_TYPES and dominant_pct >= 50:
-            facility_map = {
-                "Plastic": "PET compactor & MRF sorting line",
-                "Paper": "cardboard baler facility",
-                "Metal": "scrap metal aggregation depot",
-                "Glass": "glass crushing & cullet facility",
-            }
-            suggestions.append({
-                "id": f"sort-{zone}-{dominant_type}",
-                "priority": "medium",
-                "type": "sorting_infrastructure",
-                "zone": zone,
-                "category": dominant_type,
-                "icon": "♻️",
-                "action": f"Zone {zone} is {dominant_pct}% {dominant_type} waste. Route directly to {facility_map.get(dominant_type, 'recycling facility')} to maximize recovery.",
-                "impact_estimate": f"Up to {dominant_pct}% of Zone {zone} waste can be diverted from landfill",
-                "metric": f"{dominant_pct}% {dominant_type}",
-            })
+        # --- Dominant waste type -> sorting facility suggestion ---
+        facility_map = {
+            "Plastic": "Gyaspur MRF automated optical flaking line",
+            "Paper": "regional cardboard baling consortium",
+            "Metal": "Bapunagar eddy-current scrap aggregation foundry",
+            "Glass": "specialized glass cullet recovery depot",
+            "Organic": "Vastrapur decentralized biomethanation complex (CBG)",
+            "Mixed": "dual-stream optical trommel separation unit",
+        }
+        suggestions.append({
+            "id": f"sort-{zone}-{dominant_type}",
+            "priority": "medium",
+            "type": "sorting_infrastructure",
+            "zone": zone,
+            "category": dominant_type,
+            "icon": "♻️",
+            "action": f"{zone} has a dominant concentration of {dominant_type} ({dominant_pct}% share). Route directly to {facility_map.get(dominant_type, 'MRF recovery plant')} to maximize recovery.",
+            "impact_estimate": f"Up to {dominant_pct}% of {zone} waste diverted directly from landfill",
+            "metric": f"{dominant_pct}% {dominant_type}",
+        })
 
-        # --- Low recyclable ratio in zone → education/bin type change ---
+        # --- Low recyclable ratio in zone -> infrastructure upgrade ---
         zone_recyclable = sum(v for k, v in wt_counts.items() if k in RECYCLABLE_TYPES)
         zone_recyclability = round(zone_recyclable / bin_count * 100) if bin_count else 0
-        if zone_recyclability < 30 and bin_count >= 3:
+        if zone_recyclability < 50:
             suggestions.append({
                 "id": f"recycle-low-{zone}",
                 "priority": "low",
@@ -133,7 +148,7 @@ def get_recycling_suggestions(db: Session = Depends(get_db)):
                 "zone": zone,
                 "category": "Mixed",
                 "icon": "🔵",
-                "action": f"Zone {zone} has only {zone_recyclability}% recyclable-type bins. Consider adding dual-stream bins (recyclable + organic) to improve segregation.",
+                "action": f"{zone} has {zone_recyclability}% recyclable-type bins. Deploy dual-stream smart bins (Recyclable Dry + Wet Organic) to improve source segregation.",
                 "impact_estimate": "Dual-stream segregation typically improves recycling rate by 25–40%",
                 "metric": f"{zone_recyclability}% recyclable",
             })
